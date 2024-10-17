@@ -7,17 +7,17 @@ import (
 )
 
 type InitSystemType interface {
-	Start(timeOffset int) error
+	Start(newTime int64) error
 	IsRunning() (bool, error)
 	DeleteFile() error
 }
 
-func GetDeamon() (InitSystemType, error) {
+func NewDeamon(daemonName, program string) (InitSystemType, error) {
 	os := runtime.GOOS
 
 	switch os {
 	case "darwin":
-		return NewLaunchd(), nil
+		return NewLaunchd(daemonName, program), nil
 	case "linux":
 		// return Systemd{}, nil
 	case "windows":
