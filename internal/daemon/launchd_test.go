@@ -32,7 +32,9 @@ func TestCreateFileContent(t *testing.T) {
 	}
 }
 
-// func TestStartAndDeleteFile(t *testing.T) {
-// 	launchd := NewLaunchd("ignoremeiamjustasillylittletestthing", "someprogram")
+func TestStartAndIsRunningAndDelete(t *testing.T) {
+	launchd := NewLaunchd("ignoremeiamjustasillylittletestthing", "touch")
 
-// }
+	// start
+	err := launchd.Start(123)
+}

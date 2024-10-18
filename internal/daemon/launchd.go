@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type Launchd struct {
 	program    string
 	daemonName string
-	pathGlobal string
-	pathUser   string
+	path       string
 }
 
 func NewLaunchd(daemonName, program string) *Launchd {
 	return &Launchd{
 		program:    program,
 		daemonName: daemonName,
-		pathGlobal: "/Library/LaunchDaemons/",
-		pathUser:   "~/Library/LaunchAgents/",
+		path:       "/Library/LaunchDaemons/",
 	}
 }
 
@@ -47,10 +46,9 @@ func (l *Launchd) createFileContent(timeOffset int64) string {
 }
 
 func (l *Launchd) Start(newTime int64) error {
-	// create file
-	fileName := fmt.Sprintf("%s.plist", l.daemonName)
-	fullPath := fmt.Sprintf("%s%s", l.pathGlobal, fileName)
+	fullPath := fmt.Sprintf("%s%s.plist", l.path, l.daemonName)
 
+	// create file
 	file, err := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -65,8 +63,7 @@ func (l *Launchd) Start(newTime int64) error {
 	}
 
 	// start the daemon
-	fmt.Println(fileName)
-	err = exec.Command("launchctl", "load", fileName).Run() // this wont load!?
+	err = exec.Command("launchctl", "load", "-w", fullPath).Run()
 	if err != nil {
 		return err
 	}
@@ -74,12 +71,39 @@ func (l *Launchd) Start(newTime int64) error {
 	return nil
 }
 
-func (l *Launchd) IsRunning() (bool, error) {
-	return true, nil
+func (l *Launchd) Stop() error {
+	fullPath := fmt.Sprintf("%s%s.plist", l.path, l.daemonName)
+
+	err := exec.Command("launchctl", "unload", "-w", fullPath).Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *Launchd) IsRunning() RunningStatus {
+	cmd := fmt.Sprintf("launchctl list | grep %s", l.daemonName)
+	out, err := exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		return NOT_RUNNING
+	}
+
+	parts := strings.Fields(string(out))
+
+	if len(parts) != 3 {
+		return NOT_RUNNING
+	}
+
+	if parts[0] == "-" {
+		return STOPPED
+	}
+
+	return RUNNING
 }
 
 func (l *Launchd) DeleteFile() error {
-	path := fmt.Sprintf("%s%s", l.pathGlobal, l.daemonName)
+	path := fmt.Sprintf("%s%s.plist", l.path, l.daemonName)
 
 	err := os.Remove(path)
 	if err != nil {

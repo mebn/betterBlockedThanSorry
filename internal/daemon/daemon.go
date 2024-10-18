@@ -6,9 +6,18 @@ import (
 	"runtime"
 )
 
+type RunningStatus string
+
+const (
+	RUNNING     RunningStatus = "running"
+	NOT_RUNNING RunningStatus = "not running"
+	STOPPED     RunningStatus = "stopped"
+)
+
 type InitSystemType interface {
 	Start(newTime int64) error
-	IsRunning() (bool, error)
+	Stop() error
+	IsRunning() RunningStatus
 	DeleteFile() error
 }
 

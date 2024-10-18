@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
 )
@@ -15,14 +14,18 @@ func main() {
 	)
 
 	if err != nil {
-		fmt.Println("ERR:", err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	newTime := time.Now().Add(time.Second * 5).Unix()
+	// newTime := time.Now().Add(time.Second * 5).Unix()
 
-	err = initSystem.Start(newTime)
-	if err != nil {
-		fmt.Println(err)
-	}
+	// err = initSystem.Start(newTime)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
+
+	isRunning := initSystem.IsRunning()
+	fmt.Println(isRunning)
 }
