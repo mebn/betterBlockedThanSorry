@@ -17,53 +17,68 @@ func NewLaunchd(daemonName, program string) *Launchd {
 	return &Launchd{
 		program:    program,
 		daemonName: daemonName,
-		path:       "/Library/LaunchDaemons/",
+		path:       fmt.Sprintf("/Library/LaunchDaemons/%s.plist", daemonName),
 	}
 }
 
-func (l *Launchd) createFileContent(timeOffset int64) string {
-	return fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-
-	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-	<plist version="1.0">
-	<dict>
-
-		<key>Label</key>
-		<string>%s</string>
-		<key>ProgramArguments</key>
-		<array>
-		    <string>%s</string>
-		    <string>%d</string>
-		</array>
-		<key>KeepAlive</key>
-		<true/>
-		<key>RunAtLoad</key>
-		<true/>
-
-	</dict>
-	</plist>
-	`, l.daemonName, l.program, timeOffset)
-}
-
-func (l *Launchd) Start(newTime int64) error {
-	fullPath := fmt.Sprintf("%s%s.plist", l.path, l.daemonName)
-
-	// create file
-	file, err := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY, 0644)
+func (l *Launchd) createConfigFile(args ...string) error {
+	file, err := os.OpenFile(l.path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
+	// handle args
+	formattedArgs := ""
+	for _, arg := range args {
+		formattedArgs = fmt.Sprintf("%s\n\t\t\t<string>%s</string>", formattedArgs, arg)
+	}
+
+	fileContent := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>%s</string>
+		<key>ProgramArguments</key>
+		<array>
+			<string>%s</string>%s
+		</array>
+		<key>KeepAlive</key>
+		<true/>
+		<key>RunAtLoad</key>
+		<true/>
+	</dict>
+</plist>
+`, l.daemonName, l.program, formattedArgs)
+
 	// write to file
-	fileContent := l.createFileContent(newTime)
 	_, err = file.WriteString(fileContent)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (l *Launchd) Start(newTime int64) error {
+	time := fmt.Sprintf("%d", newTime)
+	err := l.createConfigFile(time)
+	if err != nil {
+		return err
+	}
+
 	// start the daemon
-	err = exec.Command("launchctl", "load", "-w", fullPath).Run()
+	err = l.startDaemon()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *Launchd) startDaemon() error {
+	err := exec.Command("launchctl", "load", "-w", l.path).Run()
 	if err != nil {
 		return err
 	}
@@ -72,9 +87,7 @@ func (l *Launchd) Start(newTime int64) error {
 }
 
 func (l *Launchd) Stop() error {
-	fullPath := fmt.Sprintf("%s%s.plist", l.path, l.daemonName)
-
-	err := exec.Command("launchctl", "unload", "-w", fullPath).Run()
+	err := exec.Command("launchctl", "unload", "-w", l.path).Run()
 	if err != nil {
 		return err
 	}
@@ -103,9 +116,7 @@ func (l *Launchd) IsRunning() RunningStatus {
 }
 
 func (l *Launchd) DeleteFile() error {
-	path := fmt.Sprintf("%s%s.plist", l.path, l.daemonName)
-
-	err := os.Remove(path)
+	err := os.Remove(l.path)
 	if err != nil {
 		return err
 	}
