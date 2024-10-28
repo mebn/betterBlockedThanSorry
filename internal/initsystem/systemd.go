@@ -1,4 +1,4 @@
-package daemon
+package initsystem
 
 type Systemd struct {
 }

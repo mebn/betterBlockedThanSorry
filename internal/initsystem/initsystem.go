@@ -1,4 +1,4 @@
-package daemon
+package initsystem
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ type InitSystemType interface {
 	DeleteFile() error
 }
 
-func NewDeamon(daemonName, program string) (InitSystemType, error) {
+func NewDaemon(daemonName, program string) (InitSystemType, error) {
 	os := runtime.GOOS
 
 	switch os {
