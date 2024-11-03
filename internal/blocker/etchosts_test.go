@@ -1,136 +1,132 @@
 package blocker
 
 import (
-	"fmt"
 	"os"
+	"reflect"
 	"testing"
 )
 
-func fileSetup(t *testing.T) (*os.File, string, string) {
-	filename := "/tmp/bbtsignoreme4real"
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-	if err != nil {
-		t.Fatal("Failed to open/create file, try running with sudo.")
+func TestGenerateBlocklist(t *testing.T) {
+	want := []string{
+		"127.0.0.1 a.com",
+		"127.0.0.1 www.a.com",
+		"::1 a.com",
+		"::1 www.a.com",
+		"127.0.0.1 www.b.com",
+		"127.0.0.1 www.www.b.com",
+		"::1 www.b.com",
+		"::1 www.www.b.com",
 	}
 
-	file.Truncate(0)
-	fileContent := "some\ncontent\n\n"
-	file.WriteString(fileContent)
+	blocklist := []string{"a.com", "www.b.com"}
 
-	return file, fileContent, filename
+	got := generateBlocklist(blocklist)
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal(want, got)
+	}
 }
 
-func TestGenerateEtcHosts(t *testing.T) {
-	blocklist := []string {"aaa.com", "www.bbb.com"}
+func TestAddAndDeleteBLock(t *testing.T) {
+	// setup
+	filename := "/tmp/bbtsanothertempfile346782"
+	file, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	file.Truncate(0)
+	file.WriteString(`hello
+my
+name
+is`)
+	file.Close()
 
-	want := fmt.Sprintf("%s%s%s\n", startBlock, `
-127.0.0.1 aaa.com
-127.0.0.1 www.aaa.com
-127.0.0.1 www.bbb.com
-127.0.0.1 www.www.bbb.com
-`, endBlock)
+	blocklist := []string{"a.com", "www.b.com"}
+	etcHosts := NewEtcHosts(filename, blocklist)
 
-	got := GenerateEtcHosts(blocklist)
+	// test add
+	etcHosts.AddBlock()
+	want := `hello
+my
+name
+is
+127.0.0.1 a.com
+127.0.0.1 www.a.com
+::1 a.com
+::1 www.a.com
+127.0.0.1 www.b.com
+127.0.0.1 www.www.b.com
+::1 www.b.com
+::1 www.www.b.com`
+	gotB, _ := os.ReadFile(filename)
+	got := string(gotB)
 
 	if want != got {
-		t.Fatalf("want != got:\n%s\n%s", want, got)
+		t.Fatal(want, got)
 	}
+
+	// test remove
+	etcHosts.RemoveBlock()
+	want = `hello
+my
+name
+is`
+	gotB, _ = os.ReadFile(filename)
+	got = string(gotB)
+
+	if want != got {
+		t.Fatal(want, got)
+	}
+
+	// cleanup
+	os.Remove(filename)
 }
 
-func TestFileTamperedWith(t *testing.T) {
-	file, fileContent, _ := fileSetup(t)
-	defer file.Close()
+func TestIsTamperedWith(t *testing.T) {
+	// setup
+	filename := "/tmp/bbtsanothertempfile1238246"
+	file, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	file.Truncate(0)
+	file.WriteString(`hello
+my
+name
+is`)
+	file.Close()
 
-	blockpart := GenerateEtcHosts([]string {"hello"})
-	file.WriteString(blockpart)
+	blocklist := []string{"a.com", "www.b.com"}
+	etcHosts := NewEtcHosts(filename, blocklist)
+
+	etcHosts.AddBlock()
 
 	// test no modifications
 	want := false
-	got := FileTamperedWith(file, blockpart)
+	got := etcHosts.IsTamperedWith()
 
 	if want != got {
-		t.Fatalf("[no modifications] want != got:\n%t\n%t", want, got)
+		t.Fatal(want, got)
 	}
 
-	// test modifications (changes inside start-and endBlock)
+	// test modification (a.com removed)
+	file, _ = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
 	file.Truncate(0)
-	file.WriteString(fileContent)
-	file.WriteString(startBlock)
-	file.WriteString("\n")
-	file.WriteString("not 127.0.0.1 hello")
-	file.WriteString(endBlock)
-	file.WriteString("\n")
-	
+	file.WriteString(`hello
+my
+name
+is
+127.0.0.1 www.a.com
+::1 a.com
+::1 www.a.com
+127.0.0.1 www.b.com
+127.0.0.1 www.www.b.com
+::1 www.b.com
+::1 www.www.b.com`)
+
+	file.Close()
+
 	want = true
-	got = FileTamperedWith(file, blockpart)
+	got = etcHosts.IsTamperedWith()
 
 	if want != got {
-		t.Fatalf("[inside modifications] want != got:\n%t\n%t", want, got)
+		t.Fatal(want, got)
 	}
 
-	// test modifications (no startBlock)
-	file.Truncate(0)
-	file.WriteString(fileContent)
-	file.WriteString("\n")
-	file.WriteString("127.0.0.1 hello")
-	file.WriteString("127.0.0.1 www.hello")
-	file.WriteString(endBlock)
-	file.WriteString("\n")
-	
-	want = true
-	got = FileTamperedWith(file, blockpart)
-
-	if want != got {
-		t.Fatalf("[no startBlock modifications] want != got:\n%t\n%t", want, got)
-	}
-
-	// test modifications (no endBlock)
-	file.Truncate(0)
-	file.WriteString(fileContent)
-	file.WriteString("\n")
-	file.WriteString(startBlock)
-	file.WriteString("127.0.0.1 hello")
-	file.WriteString("127.0.0.1 www.hello")
-	file.WriteString("\n")
-	
-	want = true
-	got = FileTamperedWith(file, blockpart)
-
-	if want != got {
-		t.Fatalf("[no endBlock modifications] want != got:\n%t\n%t", want, got)
-	}
-}
-
-func TestAddBlock(t *testing.T) {
-	file, fileContent, filename := fileSetup(t)
-	defer file.Close()
-
-	blockpart := GenerateEtcHosts([]string {"hello"})
-	AddBlock(file, blockpart)
-
-	want := fmt.Sprintf("%s%s", fileContent, blockpart)
-	gotByte, _ := os.ReadFile(filename)
-	got := string(gotByte)
-
-	if want != got {
-		t.Fatalf("want != got:\n%s\n%s", want, got)
-	}
-}
-
-func TestRemoveBlock(t *testing.T) {
-	file, fileContent, filename := fileSetup(t)
-	defer file.Close()
-
-	blockpart := GenerateEtcHosts([]string {"hello"})
-	AddBlock(file, blockpart)
-
-	RemoveBlock(file)
-
-	want := fileContent
-	gotByte, _ := os.ReadFile(filename)
-	got := string(gotByte)
-
-	if want != got {
-		t.Fatalf("want != got:\n%s\n%s", want, got)
-	}
+	// cleanup
+	os.Remove(filename)
 }

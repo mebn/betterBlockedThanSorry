@@ -8,77 +8,26 @@ import (
 )
 
 type Launchd struct {
-	program    string
-	daemonName string
-	path       string
+	programName string
+	daemonName  string
+	daemonPath  string
 }
 
 func NewLaunchd(daemonName, program string) *Launchd {
 	return &Launchd{
-		program:    program,
-		daemonName: daemonName,
-		path:       fmt.Sprintf("/Library/LaunchDaemons/%s.plist", daemonName),
+		programName: program,
+		daemonName:  daemonName,
+		daemonPath:  fmt.Sprintf("/Library/LaunchDaemons/%s.plist", daemonName),
 	}
 }
 
-func (l *Launchd) createConfigFile(args ...string) error {
-	file, err := os.OpenFile(l.path, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// handle args
-	formattedArgs := ""
-	for _, arg := range args {
-		formattedArgs = fmt.Sprintf("%s\n\t\t\t<string>%s</string>", formattedArgs, arg)
-	}
-
-	fileContent := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-	<dict>
-		<key>Label</key>
-		<string>%s</string>
-		<key>ProgramArguments</key>
-		<array>
-			<string>%s</string>%s
-		</array>
-		<key>KeepAlive</key>
-		<true/>
-		<key>RunAtLoad</key>
-		<true/>
-	</dict>
-</plist>
-`, l.daemonName, l.program, formattedArgs)
-
-	// write to file
-	_, err = file.WriteString(fileContent)
+func (l *Launchd) Start(args []string) error {
+	err := l.createConfigFile(args)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (l *Launchd) Start(newTime int64) error {
-	time := fmt.Sprintf("%d", newTime)
-	err := l.createConfigFile(time)
-	if err != nil {
-		return err
-	}
-
-	// start the daemon
-	err = l.startDaemon()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (l *Launchd) startDaemon() error {
-	err := exec.Command("launchctl", "load", "-w", l.path).Run()
+	err = exec.Command("launchctl", "load", "-w", l.daemonPath).Run()
 	if err != nil {
 		return err
 	}
@@ -87,7 +36,12 @@ func (l *Launchd) startDaemon() error {
 }
 
 func (l *Launchd) Stop() error {
-	err := exec.Command("launchctl", "unload", "-w", l.path).Run()
+	err := exec.Command("launchctl", "unload", "-w", l.daemonPath).Run()
+	if err != nil {
+		return err
+	}
+
+	err = l.deleteFile()
 	if err != nil {
 		return err
 	}
@@ -115,8 +69,48 @@ func (l *Launchd) IsRunning() RunningStatus {
 	return RUNNING
 }
 
-func (l *Launchd) DeleteFile() error {
-	err := os.Remove(l.path)
+func (l *Launchd) createConfigFile(args []string) error {
+	file, err := os.OpenFile(l.daemonPath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// handle args
+	formattedArgs := ""
+	for _, arg := range args {
+		formattedArgs = fmt.Sprintf("%s\n\t\t\t<string>%s</string>", formattedArgs, arg)
+	}
+
+	fileContent := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>%s</string>
+		<key>ProgramArguments</key>
+		<array>
+			<string>%s</string>%s
+		</array>
+		<key>KeepAlive</key>
+		<true/>
+		<key>RunAtLoad</key>
+		<true/>
+	</dict>
+</plist>
+`, l.daemonName, l.programName, formattedArgs)
+
+	// write to file
+	_, err = file.WriteString(fileContent)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *Launchd) deleteFile() error {
+	err := os.Remove(l.daemonPath)
 	if err != nil {
 		return err
 	}

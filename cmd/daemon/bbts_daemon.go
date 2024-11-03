@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -9,47 +10,40 @@ import (
 )
 
 func main() {
-	logFile := blocker.OpenLogFile()
-	defer logFile.Close()
-
-	etcHostsFile := blocker.OpenFile("/tmp/etc", logFile)
-	defer etcHostsFile.Close()
-
-	// handle args
-	endTime, blocklist := handleArgs(logFile)
-	blockPart := blocker.GenerateEtcHosts(blocklist)
+	endTime, blocklist := handleArgs()
+	etcHosts := blocker.NewEtcHosts("/etc/hosts", blocklist)
 	currentTime := time.Now().Unix()
-	
-	// start of program/daemon
-	blocker.RemoveBlock(etcHostsFile)
-	blocker.AddBlock(etcHostsFile, blockPart)
+
+	etcHosts.RemoveBlock()
+	etcHosts.AddBlock()
 
 	for currentTime < endTime {
-		if blocker.FileTamperedWith(etcHostsFile, blockPart) {
-			blocker.RemoveBlock(etcHostsFile)
-			blocker.AddBlock(etcHostsFile, blockPart)
+		if etcHosts.IsTamperedWith() {
+			etcHosts.RemoveBlock()
+			etcHosts.AddBlock()
 		}
 
-		time.Sleep(time.Second * 1)
+		time.Sleep(10 * time.Second)
+		println("now")
 		currentTime = time.Now().Unix()
 	}
 
-	blocker.RemoveBlock(etcHostsFile)
+	etcHosts.RemoveBlock()
 }
 
-func handleArgs(logFile *os.File) (int64, []string) {
+func handleArgs() (int64, []string) {
 	if len(os.Args) < 2 {
-		logFile.WriteString("[ERR] No argument(s) received. \n")
+		fmt.Println("[ERR] No argument(s) received.")
 		os.Exit(1)
 	}
 
 	endTime, err := strconv.ParseInt(os.Args[1], 10, 64)
 	if err != nil {
-		logFile.WriteString("[ERR] First argument is not a int. \n")
+		fmt.Println("[ERR] First argument is not a int.")
 		os.Exit(1)
 	}
 
-	// TODO: handle blocklist from the args
-	blocklist := []string {"reddit.com"}
+	blocklist := os.Args[2:]
+
 	return endTime, blocklist
 }

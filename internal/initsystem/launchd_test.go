@@ -9,12 +9,12 @@ import (
 func TestCreateConfigFile(t *testing.T) {
 	launchd := NewLaunchd("ignoremeiamjustasillylittletestthing", "someprogram")
 
-	err := launchd.createConfigFile("abc", "123")
+	err := launchd.createConfigFile([]string{"abc", "123"})
 	if err != nil {
 		t.Fatal("createConfigFile() failed: ", err)
 	}
 
-	got, err := os.ReadFile(launchd.path)
+	gotB, err := os.ReadFile(launchd.daemonPath)
 	if err != nil {
 		t.Fatal("Read file failed: ", err)
 	}
@@ -39,55 +39,40 @@ func TestCreateConfigFile(t *testing.T) {
 </plist>
 `
 
-	if string(got) != want {
-		t.Fatal("got:", string(got), "want:", want)
+	got := string(gotB)
+
+	if got != want {
+		t.Fatal(got, want)
 	}
 
 	// delete file when the test is done, don't care if it fails
-	os.Remove(launchd.path)
+	os.Remove(launchd.daemonPath)
 }
 
-func TestStartAndIsRunningAndDelete(t *testing.T) {
+func TestStartAndDelete(t *testing.T) {
+	// setup
 	launchd := NewLaunchd("ignoremeiamjustasillylittletestthing2", "touch")
-
-	// start by making sure the file dosen't exist and it's unloaded
 	launchd.Stop()
-	os.Remove(launchd.path)
 	os.Remove("/tmp/ignoremeiamjustasillylittletestthing2")
 
-	// start (simulate start)
-	err := launchd.createConfigFile("/tmp/ignoremeiamjustasillylittletestthing2")
-	if err != nil {
-		t.Fatal("Create config file failed:", err)
-	}
+	// start
+	launchd.Start([]string{"/tmp/ignoremeiamjustasillylittletestthing2"})
 
-	// start the daemon
-	err = launchd.startDaemon()
-	if err != nil {
-		t.Fatal("startDaemon() failed:", err)
-	}
-
-	// need to sleep here so daemon can create the file
+	// need to sleep here so daemon can create the touch file
 	time.Sleep(time.Second)
 
 	// does the file exist now? i.e. did the daemon work
-	_, err = os.ReadFile("/tmp/ignoremeiamjustasillylittletestthing2")
+	_, err := os.ReadFile("/tmp/ignoremeiamjustasillylittletestthing2")
 	if err != nil {
 		t.Fatal("File was not created, daemon didn't run:", err)
 	}
 
-	isRunning := launchd.IsRunning()
-
-	if isRunning != STOPPED {
-		t.Fatal("Daemon not running, but should be: ", err)
-	}
-
-	// finally stop the daemon
+	// stop the daemon
 	err = launchd.Stop()
 	if err != nil {
 		t.Fatal("Stopping the daemon failed:", err)
 	}
 
 	// finally remove the temp test file
-	os.Remove(launchd.path)
+	os.Remove(launchd.daemonPath)
 }

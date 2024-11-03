@@ -15,20 +15,19 @@ const (
 )
 
 type InitSystemType interface {
-	Start(newTime int64) error
+	Start(args []string) error
 	Stop() error
 	IsRunning() RunningStatus
-	DeleteFile() error
 }
 
-func NewDaemon(daemonName, program string) (InitSystemType, error) {
+func NewDaemon(daemonName, programName string) (InitSystemType, error) {
 	os := runtime.GOOS
 
 	switch os {
 	case "darwin":
-		return NewLaunchd(daemonName, program), nil
+		return NewLaunchd(daemonName, programName), nil
 	case "linux":
-		// return Systemd{}, nil
+		fmt.Println("Linux")
 	case "windows":
 		fmt.Println("windows")
 	}
