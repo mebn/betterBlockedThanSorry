@@ -9,15 +9,11 @@ import (
 type EtcHosts struct {
 	blocklist []string
 	filename  string
-	file      *os.File
 }
 
 func NewEtcHosts(filename string, blocklist []string) EtcHosts {
-	file, _ := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-
 	return EtcHosts{
 		blocklist: generateBlocklist(blocklist),
-		file:      file,
 		filename:  filename,
 	}
 }
@@ -36,15 +32,15 @@ func generateBlocklist(blocklist []string) []string {
 }
 
 func (e *EtcHosts) AddBlock() {
-	resetReaderPointer(e.file)
-
 	var str strings.Builder
 
 	for _, entry := range e.blocklist {
 		str.WriteString(fmt.Sprintf("\n%s", entry))
 	}
 
-	e.file.WriteString(str.String())
+	file, _ := os.OpenFile(e.filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer file.Close()
+	file.WriteString(str.String())
 }
 
 func (e *EtcHosts) RemoveBlock() {
@@ -55,9 +51,9 @@ func (e *EtcHosts) RemoveBlock() {
 		contents = strings.ReplaceAll(contents, fmt.Sprintf("\n%s", entry), "")
 	}
 
-	e.file.Truncate(0)
-	resetReaderPointer(e.file)
-	e.file.WriteString(contents)
+	file, _ := os.OpenFile(e.filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	defer file.Close()
+	file.WriteString(contents)
 }
 
 func (e *EtcHosts) IsTamperedWith() bool {
@@ -74,11 +70,4 @@ func (e *EtcHosts) IsTamperedWith() bool {
 	}
 
 	return len(set) != 0
-}
-
-func resetReaderPointer(file *os.File) {
-	_, err := file.Seek(0, 0)
-	if err != nil {
-		os.Exit(1)
-	}
 }

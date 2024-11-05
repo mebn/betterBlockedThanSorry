@@ -13,7 +13,7 @@ type Launchd struct {
 	daemonPath  string
 }
 
-func NewLaunchd(daemonName, program string) *Launchd {
+func newLaunchd(daemonName, program string) *Launchd {
 	return &Launchd{
 		programName: program,
 		daemonName:  daemonName,

@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateConfigFile(t *testing.T) {
-	launchd := NewLaunchd("ignoremeiamjustasillylittletestthing", "someprogram")
+	launchd := newLaunchd("ignoremeiamjustasillylittletestthing", "someprogram")
 
 	err := launchd.createConfigFile([]string{"abc", "123"})
 	if err != nil {
@@ -51,7 +51,7 @@ func TestCreateConfigFile(t *testing.T) {
 
 func TestStartAndDelete(t *testing.T) {
 	// setup
-	launchd := NewLaunchd("ignoremeiamjustasillylittletestthing2", "touch")
+	launchd := newLaunchd("ignoremeiamjustasillylittletestthing2", "touch")
 	launchd.Stop()
 	os.Remove("/tmp/ignoremeiamjustasillylittletestthing2")
 

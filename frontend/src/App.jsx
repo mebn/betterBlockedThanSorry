@@ -1,38 +1,53 @@
 import { useState } from "react";
-import logo from "./assets/images/logo-universal.png";
 import "./App.css";
-import { Greet } from "../wailsjs/go/main/App";
+import { StartBlocker } from "../wailsjs/go/main/App";
 
 function App() {
-  const [resultText, setResultText] = useState(
-    "Please enter your name below 👇"
-  );
-  const [name, setName] = useState("");
-  const updateName = (e) => setName(e.target.value);
-  const updateResultText = (result) => setResultText(result);
+  const [blocklist, setBlocklist] = useState([
+    "svt.se",
+    "reddit.com",
+    "youtube.com",
+  ]);
 
-  function greet() {
-    Greet(name).then(updateResultText);
+  // in secs
+  const [blocktime, setBLocktime] = useState(60);
+
+  const updateBlocklist = (e) => {
+    setBlocklist(e.target.value.split(","));
+  };
+
+  function startBlocker() {
+    StartBlocker(blocktime, blocklist).then((res) => {
+      console.log(res);
+    });
   }
 
   return (
     <div id="App">
-      <img src={logo} id="logo" alt="logo" />
-      <div id="result" className="result">
-        {resultText}
-      </div>
-      <div id="input" className="input-box">
+      <div>
         <input
-          id="name"
-          className="input"
-          onChange={updateName}
+          id="blocklist"
+          onChange={updateBlocklist}
+          value={blocklist}
           autoComplete="off"
-          name="input"
+          name="blocklist"
           type="text"
         />
-        <button className="btn" onClick={greet}>
-          Greet!
-        </button>
+
+        <br />
+
+        <input
+          id="blocktime"
+          onChange={(e) => setBLocktime(e.target.value)}
+          value={blocktime}
+          autoComplete="off"
+          name="blocktime"
+          type="number"
+        />
+
+        <br />
+
+        <button onClick={startBlocker}>Start blocker</button>
       </div>
     </div>
   );

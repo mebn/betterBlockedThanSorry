@@ -25,7 +25,7 @@ func NewDaemon(daemonName, programName string) (InitSystemType, error) {
 
 	switch os {
 	case "darwin":
-		return NewLaunchd(daemonName, programName), nil
+		return newLaunchd(daemonName, programName), nil
 	case "linux":
 		fmt.Println("Linux")
 	case "windows":

@@ -24,7 +24,6 @@ func main() {
 		}
 
 		time.Sleep(10 * time.Second)
-		println("now")
 		currentTime = time.Now().Unix()
 	}
 
