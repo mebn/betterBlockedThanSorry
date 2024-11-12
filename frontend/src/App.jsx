@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import "./App.css";
 import {
   StartBlocker,
   GetDaemonRunningStatus,
@@ -25,19 +24,27 @@ function App() {
 
     const initialize = async () => {
       const daemonStatus = await GetDaemonRunningStatus();
-      setIsRunning(daemonStatus);
       if (daemonStatus) {
-        const fetchedEndTime = await GetEndTime();
-        setEndTime(fetchedEndTime);
+        setIsRunning(daemonStatus);
+      }
+
+      if (isRunning) {
+        let fetchedEndTime = endTime;
+
+        if (fetchedEndTime == 0) {
+          fetchedEndTime = await GetEndTime();
+          console.log("fetchedendtime", fetchedEndTime);
+          setEndTime(fetchedEndTime);
+        }
 
         intervalId = setInterval(() => {
-          setCurrentTime(getCurrentTime());
-        }, 1000);
+          let time = getCurrentTime();
+          setCurrentTime(time);
 
-        const timeRemaining = fetchedEndTime - getCurrentTime();
-        setTimeout(() => {
-          setIsRunning(false);
-        }, timeRemaining * 1000);
+          if (fetchedEndTime - time <= 0) {
+            setIsRunning(false);
+          }
+        }, 1000);
       }
     };
 
@@ -56,58 +63,45 @@ function App() {
     }
 
     const newEndTime = await StartBlocker(blocktime, blocklist);
-    setCurrentTime(getCurrentTime());
     setEndTime(newEndTime);
-    setIsRunning(await GetDaemonRunningStatus());
 
-    if (isRunning && newEndTime !== 0) {
-      const intervalId = setInterval(() => {
-        setCurrentTime(getCurrentTime());
-      }, 1000);
-
-      const timeRemaining = newEndTime - getCurrentTime();
-      setTimeout(() => {
-        setIsRunning(false);
-        clearInterval(intervalId);
-      }, timeRemaining * 1000);
+    const daemonStatus = await GetDaemonRunningStatus();
+    if (daemonStatus) {
+      setCurrentTime(getCurrentTime());
+      setIsRunning(daemonStatus);
     }
   };
 
   if (isRunning) {
     return (
-      <div id="App">
-        <div>
-          <h1>Program is already running.</h1>
-          <h1>End time: {endTime}</h1>
-          <h1>Current time: {currentTime}</h1>
-          <h1>Time remaining: {endTime - currentTime}</h1>
-        </div>
+      <div style={{ color: "white" }}>
+        <h1 className="title">BetterBlockedThanSorry</h1>
+        <h2>The blocker will stop in {endTime - currentTime} seconds.</h2>
       </div>
     );
   } else {
     return (
-      <div id="App">
-        <div>
-          <input
-            id="blocklist"
-            onChange={(e) => setBlocklist(e.target.value.split(","))}
-            value={blocklist}
-            autoComplete="off"
-            name="blocklist"
-            type="text"
-          />
-          <br />
-          <input
-            id="blocktime"
-            onChange={(e) => setBlocktime(parseInt(e.target.value))}
-            value={blocktime}
-            autoComplete="off"
-            name="blocktime"
-            type="number"
-          />
-          <br />
-          <button onClick={startBlocker}>Start blocker</button>
-        </div>
+      <div>
+        <h1 className="title">BetterBlockedThanSorry</h1>
+        <input
+          id="blocklist"
+          onChange={(e) => setBlocklist(e.target.value.split(","))}
+          value={blocklist}
+          autoComplete="off"
+          name="blocklist"
+          type="text"
+        />
+        <br />
+        <input
+          id="blocktime"
+          onChange={(e) => setBlocktime(parseInt(e.target.value))}
+          value={blocktime}
+          autoComplete="off"
+          name="blocktime"
+          type="number"
+        />
+        <br />
+        <button onClick={startBlocker}>Start blocker</button>
       </div>
     );
   }

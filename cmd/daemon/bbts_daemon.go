@@ -12,24 +12,35 @@ import (
 func main() {
 	endTime, blocklist := handleArgs()
 	etcHosts := blocker.NewEtcHosts("/etc/hosts", blocklist)
-	currentTime := time.Now().Unix()
 
-	etcHosts.RemoveBlock()
+	// some setup
+	writeInfoToFile("/tmp/bbts.log", fmt.Sprintf("%d", endTime))
+	// etcHosts.RemoveBlock()
 	etcHosts.AddBlock()
 
-	for currentTime < endTime {
-		writeInfoToFile("/tmp/bbts.log", fmt.Sprintf("%d", endTime))
+	// Timer for the overall duration
+	duration := time.Until(time.Unix(endTime, 0))
+	durationTimer := time.NewTimer(duration)
+	defer durationTimer.Stop()
 
-		if etcHosts.IsTamperedWith() {
+	// Ticker for the periodic checks
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-durationTimer.C:
 			etcHosts.RemoveBlock()
-			etcHosts.AddBlock()
+			return
+		case <-ticker.C:
+			writeInfoToFile("/tmp/bbts.log", fmt.Sprintf("%d", endTime))
+
+			if etcHosts.IsTamperedWith() {
+				etcHosts.RemoveBlock()
+				etcHosts.AddBlock()
+			}
 		}
-
-		time.Sleep(60 * time.Second)
-		currentTime = time.Now().Unix()
 	}
-
-	etcHosts.RemoveBlock()
 }
 
 func handleArgs() (int64, []string) {
@@ -49,8 +60,12 @@ func handleArgs() (int64, []string) {
 	return endTime, blocklist
 }
 
-func writeInfoToFile(filename, contents string) {
-	file, _ := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	defer file.Close()
-	file.WriteString(contents)
+func writeInfoToFile(filename, content string) error {
+	currentData, _ := os.ReadFile(filename)
+
+	if string(currentData) != content {
+		_ = os.WriteFile(filename, []byte(content), 0644)
+	}
+
+	return nil
 }

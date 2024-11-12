@@ -1,5 +1,10 @@
+* {
+  overflow: hidden;
+  text-align: center;
+}
+
 html {
-  background-color: rgb(255, 255, 255, 1);
+  background-color: rgb(44, 44, 44, 1);
 }
 
 body {
@@ -15,4 +20,8 @@ body {
   font-weight: 400;
   src: local(""),
     url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
+}
+
+.title {
+  color: white;
 }

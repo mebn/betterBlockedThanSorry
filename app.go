@@ -41,9 +41,8 @@ func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
 	err := a.daemon.Start(blocklist)
 	if err != nil {
 		fmt.Printf("Error starting blocker: %s\n", err)
+		return 0
 	}
-
-	fmt.Printf("Blocker started. Running for %d seconds! arguments: %s\n", blocktime, blocklist)
 
 	return endTime
 }
