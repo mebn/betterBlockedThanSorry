@@ -6,18 +6,10 @@ import (
 	"runtime"
 )
 
-type RunningStatus string
-
-const (
-	RUNNING     RunningStatus = "running"
-	NOT_RUNNING RunningStatus = "not running"
-	STOPPED     RunningStatus = "stopped"
-)
-
 type InitSystemType interface {
 	Start(args []string) error
 	Stop() error
-	IsRunning() RunningStatus
+	IsRunning() bool
 }
 
 func NewDaemon(daemonName, programName string) (InitSystemType, error) {

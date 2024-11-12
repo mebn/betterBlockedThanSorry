@@ -18,12 +18,14 @@ func main() {
 	etcHosts.AddBlock()
 
 	for currentTime < endTime {
+		writeInfoToFile("/tmp/bbts.log", fmt.Sprintf("%d", endTime))
+
 		if etcHosts.IsTamperedWith() {
 			etcHosts.RemoveBlock()
 			etcHosts.AddBlock()
 		}
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(60 * time.Second)
 		currentTime = time.Now().Unix()
 	}
 
@@ -45,4 +47,10 @@ func handleArgs() (int64, []string) {
 	blocklist := os.Args[2:]
 
 	return endTime, blocklist
+}
+
+func writeInfoToFile(filename, contents string) {
+	file, _ := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	defer file.Close()
+	file.WriteString(contents)
 }

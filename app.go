@@ -3,20 +3,28 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/mebn/betterBlockedThanSorry/internal/initsystem"
 )
 
-// App struct
 type App struct {
-	ctx context.Context
+	ctx    context.Context
+	daemon initsystem.InitSystemType
 }
 
-// NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	daemon, err := initsystem.NewDaemon("bbts_daemon_1337", "/Users/mebn/go/bin/bbts_daemon")
+
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: %s", err))
+	}
+
+	return &App{
+		daemon: daemon,
+	}
 }
 
 // startup is called when the app starts. The context is saved
@@ -25,23 +33,35 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
-func (a *App) StartBlocker(blocktime int, blocklist []string) string {
-	daemon, err := initsystem.NewDaemon("bbts_daemon_1337", "/Users/mebn/go/bin/bbts_daemon")
-
-	if err != nil {
-		return fmt.Sprintf("ERROR: %s", err)
-	}
-
+func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
 	endTime := time.Now().Add(time.Second * time.Duration(blocktime)).Unix()
 	endTimeStr := strconv.FormatInt(endTime, 10)
 	blocklist = append([]string{endTimeStr}, blocklist...)
 
-	daemon.Start(blocklist)
+	err := a.daemon.Start(blocklist)
+	if err != nil {
+		fmt.Printf("Error starting blocker: %s\n", err)
+	}
 
-	return fmt.Sprintf("Blocker started. Running for %d seconds! blocklist: %s", blocktime, blocklist)
+	fmt.Printf("Blocker started. Running for %d seconds! arguments: %s\n", blocktime, blocklist)
+
+	return endTime
+}
+
+func (a *App) GetDaemonRunningStatus() bool {
+	isRunning := a.daemon.IsRunning()
+
+	if !isRunning {
+		_ = a.daemon.Stop()
+	}
+
+	return isRunning
+}
+
+func (a *App) GetEndTime(filename string) int64 {
+	contentB, _ := os.ReadFile("/tmp/bbts.log")
+	content := string(contentB)
+	endTime, _ := strconv.ParseInt(content, 10, 64)
+
+	return endTime
 }

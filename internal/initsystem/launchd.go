@@ -49,24 +49,16 @@ func (l *Launchd) Stop() error {
 	return nil
 }
 
-func (l *Launchd) IsRunning() RunningStatus {
+func (l *Launchd) IsRunning() bool {
 	cmd := fmt.Sprintf("launchctl list | grep %s", l.daemonName)
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		return NOT_RUNNING
+		return false
 	}
 
 	parts := strings.Fields(string(out))
 
-	if len(parts) != 3 {
-		return NOT_RUNNING
-	}
-
-	if parts[0] == "-" {
-		return STOPPED
-	}
-
-	return RUNNING
+	return !(len(parts) != 3 || parts[0] == "-")
 }
 
 func (l *Launchd) createConfigFile(args []string) error {

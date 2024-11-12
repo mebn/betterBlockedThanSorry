@@ -49,7 +49,7 @@ func TestCreateConfigFile(t *testing.T) {
 	os.Remove(launchd.daemonPath)
 }
 
-func TestStartAndDelete(t *testing.T) {
+func TestStartAndIsRunningAndDelete(t *testing.T) {
 	// setup
 	launchd := newLaunchd("ignoremeiamjustasillylittletestthing2", "touch")
 	launchd.Stop()
@@ -65,6 +65,14 @@ func TestStartAndDelete(t *testing.T) {
 	_, err := os.ReadFile("/tmp/ignoremeiamjustasillylittletestthing2")
 	if err != nil {
 		t.Fatal("File was not created, daemon didn't run:", err)
+	}
+
+	// status
+	want := false
+	got := launchd.IsRunning()
+
+	if got != want {
+		t.Fatal(got, want)
 	}
 
 	// stop the daemon
