@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  StartBlocker,
-  GetDaemonRunningStatus,
-  GetEndTime,
-} from "../wailsjs/go/main/App";
+import { GetDaemonRunningStatus, GetEndTime } from "../wailsjs/go/main/App";
+import Runner from "./screens/Runner";
+import Home from "./screens/Home";
 
 function App() {
   const getCurrentTime = () => Math.floor(Date.now() / 1000);
@@ -55,56 +53,21 @@ function App() {
     };
   }, [isRunning]);
 
-  const startBlocker = async () => {
-    const preIsRunning = await GetDaemonRunningStatus();
-    if (preIsRunning) {
-      console.log("Program is already running");
-      return;
-    }
-
-    const newEndTime = await StartBlocker(blocktime, blocklist);
-    setEndTime(newEndTime);
-
-    const daemonStatus = await GetDaemonRunningStatus();
-    if (daemonStatus) {
-      setCurrentTime(getCurrentTime());
-      setIsRunning(daemonStatus);
-    }
-  };
-
   if (isRunning) {
-    return (
-      <div style={{ color: "white" }}>
-        <h1 className="title">BetterBlockedThanSorry</h1>
-        <h2>The blocker will stop in {endTime - currentTime} seconds.</h2>
-      </div>
-    );
-  } else {
-    return (
-      <div>
-        <h1 className="title">BetterBlockedThanSorry</h1>
-        <input
-          id="blocklist"
-          onChange={(e) => setBlocklist(e.target.value.split(","))}
-          value={blocklist}
-          autoComplete="off"
-          name="blocklist"
-          type="text"
-        />
-        <br />
-        <input
-          id="blocktime"
-          onChange={(e) => setBlocktime(parseInt(e.target.value))}
-          value={blocktime}
-          autoComplete="off"
-          name="blocktime"
-          type="number"
-        />
-        <br />
-        <button onClick={startBlocker}>Start blocker</button>
-      </div>
-    );
+    return <Runner currentTime={currentTime} endTime={endTime} />;
   }
+
+  return (
+    <Home
+      blocklist={blocklist}
+      setBlocklist={setBlocklist}
+      blocktime={blocktime}
+      setBlocktime={setBlocktime}
+      setEndTime={setEndTime}
+      setCurrentTime={setCurrentTime}
+      setIsRunning={setIsRunning}
+    />
+  );
 }
 
 export default App;
