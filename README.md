@@ -2,7 +2,7 @@
 
 Block access to websites for a certain time period.
 
-## How to run
+## Dev
 
 Run:
 
@@ -23,16 +23,9 @@ Run:
 go test ./...
 ```
 
-## Binary with privileges (MacOS)
+### Build
 
 ```sh
-# File: x.app/Contents/MacOS/launch_with_sudo.sh
-#!/bin/bash
-osascript -e 'do shell script "/Applications/myproject.app/Contents/MacOS/myproject" with administrator privileges'
-
-# File: x.app/Info.plist
-<key>CFBundleExecutable</key>
-<string>launch_with_sudo.sh</string>
+# build for MacOS
+sudo ./build/build_macos.sh
 ```
-
-Also remember to put `bbts_daemon` in `x.app/Contents/MacOS/`.
