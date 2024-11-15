@@ -8,7 +8,7 @@ Run:
 
 ```sh
 # main (gui)
-wails dev
+sudo ./run.sh
 
 # daemon
 go run cmd/daemon/bbts_daemon.go

@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/mebn/betterBlockedThanSorry/internal/blocker"
+	"github.com/mebn/betterBlockedThanSorry/internal/env"
 )
 
 func main() {
 	endTime, blocklist := handleArgs()
-	etcHosts := blocker.NewEtcHosts("/etc/hosts", blocklist)
+	etcHosts := blocker.NewEtcHosts(env.EtcHostsPath, blocklist)
 
 	// some setup
-	writeInfoToFile("/tmp/bbts.log", fmt.Sprintf("%d", endTime))
+	writeInfoToFile(env.LogPath, fmt.Sprintf("%d", endTime))
 	// etcHosts.RemoveBlock()
 	etcHosts.AddBlock()
 
@@ -33,7 +34,7 @@ func main() {
 			etcHosts.RemoveBlock()
 			return
 		case <-ticker.C:
-			writeInfoToFile("/tmp/bbts.log", fmt.Sprintf("%d", endTime))
+			writeInfoToFile(env.LogPath, fmt.Sprintf("%d", endTime))
 
 			if etcHosts.IsTamperedWith() {
 				etcHosts.RemoveBlock()

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mebn/betterBlockedThanSorry/internal/env"
 	"github.com/mebn/betterBlockedThanSorry/internal/initsystem"
 )
 
@@ -16,7 +17,7 @@ type App struct {
 }
 
 func NewApp() *App {
-	daemon, err := initsystem.NewDaemon("bbts_daemon_1337", "/Users/mebn/go/bin/bbts_daemon")
+	daemon, err := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
 
 	if err != nil {
 		panic(fmt.Sprintf("ERROR: %s", err))
@@ -40,6 +41,7 @@ func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
 
 	err := a.daemon.Start(blocklist)
 	if err != nil {
+		fmt.Println(env.DaemonName, env.EtcHostsPath, env.LogPath, env.ProgramPath)
 		fmt.Printf("Error starting blocker: %s\n", err)
 		return 0
 	}
@@ -58,7 +60,7 @@ func (a *App) GetDaemonRunningStatus() bool {
 }
 
 func (a *App) GetEndTime(filename string) int64 {
-	contentB, _ := os.ReadFile("/tmp/bbts.log")
+	contentB, _ := os.ReadFile(env.LogPath)
 	content := string(contentB)
 	endTime, _ := strconv.ParseInt(content, 10, 64)
 
