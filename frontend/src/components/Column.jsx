@@ -1,4 +1,4 @@
-export default ({ title, buttonTitle, children }) => {
+export default ({ title, buttonTitle, isRunning, onClick, children }) => {
   return (
     <div
       style={{
@@ -26,6 +26,8 @@ export default ({ title, buttonTitle, children }) => {
         <h3 style={{ color: "#7E7E7E" }}>{title}</h3>
         <button
           style={{
+            visibility:
+              buttonTitle == "Reset" && isRunning ? "hidden" : "visible",
             background: "#4E67D6",
             color: "#EFEFEF",
             padding: "10px 20px",
@@ -34,6 +36,7 @@ export default ({ title, buttonTitle, children }) => {
             cursor: "pointer",
             fontWeight: "bold",
           }}
+          onClick={onClick}
         >
           {buttonTitle}
         </button>
