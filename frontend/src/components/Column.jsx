@@ -4,12 +4,14 @@ export default ({ title, buttonTitle, children }) => {
       style={{
         display: "flex",
         flexFlow: "column",
-        flexGrow: "1",
         gap: "10px",
         background: "#FEFEFE",
         borderRadius: "10px",
         padding: "20px",
-        // flex: "1",
+        overflowY: "hidden",
+        height: "100%",
+        boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
       {/* info and button */}
