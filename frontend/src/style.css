@@ -2,6 +2,12 @@
   margin: 0;
   padding: 0;
   letter-spacing: 1px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* outline: none; */
+  cursor: default;
 }
 
 html,
@@ -21,13 +27,18 @@ body {
 }
 
 /* Hide arrows for all browsers */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-input[type="number"] {
+input {
   -moz-appearance: textfield; /* For Firefox */
   appearance: none; /* Standard */
+  cursor: auto;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
 }

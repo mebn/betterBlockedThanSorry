@@ -1,4 +1,4 @@
-export default ({ text, isRunning }) => {
+export default ({ text, isRunning, onClick }) => {
   return (
     <div
       style={{
@@ -14,13 +14,16 @@ export default ({ text, isRunning }) => {
           visibility: isRunning ? "hidden" : "visible",
           background: "#EFEFEF",
           color: "#4E67D6",
-          padding: "10px 20px",
+          width: "30px",
+          height: "30px",
+          // marginRight: "10px",
           border: "none",
           borderRadius: "20px",
           cursor: "pointer",
           fontWeight: "bold",
         }}
         disabled={isRunning}
+        onClick={onClick}
       >
         &#x1F5D1;
       </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   GetDaemonRunningStatus,
   GetEndTime,
@@ -14,10 +14,10 @@ function App() {
   const getCurrentTime = () => Math.floor(Date.now() / 1000);
 
   const [blocktime, setBlocktime] = useState({
-    days: null,
-    hours: null,
-    minutes: null,
-    seconds: null,
+    days: "",
+    hours: "",
+    minutes: "",
+    seconds: "",
   });
   const [blocklist, setBlocklist] = useState([
     "svt.se",
@@ -27,6 +27,21 @@ function App() {
 
   const [isRunning, setIsRunning] = useState(false);
   const [endTime, setEndTime] = useState(0);
+  const [dialogWebsite, setDialogWebsite] = useState("");
+
+  const dialogRef = useRef(null);
+
+  const toggleDialog = () => {
+    if (!dialogRef.current) {
+      return;
+    }
+
+    setDialogWebsite("");
+
+    dialogRef.current.hasAttribute("open")
+      ? dialogRef.current.close()
+      : dialogRef.current.showModal();
+  };
 
   useEffect(() => {
     let intervalId;
@@ -100,148 +115,262 @@ function App() {
   };
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateAreas: `
+    <div>
+      <dialog
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          padding: "20px",
+          border: "none",
+          borderRadius: "10px",
+          background: "white",
+          maxWidth: "400px",
+        }}
+        ref={dialogRef}
+        onClick={(e) => {
+          if (e.currentTarget == e.target) {
+            toggleDialog();
+          }
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexFlow: "column",
+            gap: "20px",
+          }}
+        >
+          <h3>Add new website to block</h3>
+          <input
+            style={{
+              background: "#EFEFEF",
+              border: "none",
+              borderRadius: "10px",
+              padding: "10px",
+              fontSize: "16px",
+              outline: "none",
+            }}
+            type="text"
+            tabIndex={0}
+            placeholder="www.website.com"
+            value={dialogWebsite}
+            onChange={(e) => setDialogWebsite(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setBlocklist([...blocklist, dialogWebsite]);
+                toggleDialog();
+              }
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              flexFlow: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <button
+              style={{
+                padding: "15px 20px",
+                border: "none",
+                cursor: "pointer",
+                borderRadius: "10px",
+                background: "#FF6B6B",
+                color: "white",
+                fontWeight: "bold",
+              }}
+              onClick={toggleDialog}
+            >
+              Cancel
+            </button>
+            <button
+              style={{
+                padding: "15px 20px",
+                border: "none",
+                cursor: "pointer",
+                borderRadius: "10px",
+                background: "#4E67D6",
+                color: "white",
+                fontWeight: "bold",
+              }}
+              onClick={() => {
+                setBlocklist([...blocklist, dialogWebsite]);
+                toggleDialog();
+              }}
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateAreas: `
           "top top"
           "blocktime blocklist"
           "start blocklist"
         `,
-        gridTemplateColumns: "1fr 1fr",
-        gap: "20px",
-        padding: "20px",
-        height: "100vh",
-        boxSizing: "border-box",
-      }}
-    >
-      <div style={{ gridArea: "top" }}>
-        <Title buttonTitle="Give Feedback" />
-      </div>
-
-      <div style={{ gridArea: "blocktime" }}>
-        <Column
-          title="Blocktime"
-          buttonTitle="Reset"
-          isRunning={isRunning}
-          onClick={() => {
-            setBlocktime({
-              days: "",
-              hours: "",
-              minutes: "",
-              seconds: "",
-            });
-          }}
-        >
-          <Counter
-            text="Days"
-            value={blocktime.days}
-            isRunning={isRunning}
-            onChange={(e) => {
-              let val = parseInt(e.target.value, 10);
-              if (!isNaN(val)) {
-                val = val > 7 ? 7 : val;
-                val = val >= 0 ? val : 0;
-              }
-              setBlocktime({
-                ...blocktime,
-                days: val,
-              });
-            }}
-          />
-          <Counter
-            text="Hours"
-            value={blocktime.hours}
-            isRunning={isRunning}
-            onChange={(e) => {
-              let val = parseInt(e.target.value, 10);
-              if (!isNaN(val)) {
-                val = val > 23 ? 23 : val;
-                val = val >= 0 ? val : 0;
-              }
-              setBlocktime({
-                ...blocktime,
-                hours: val,
-              });
-            }}
-          />
-          <Counter
-            text="Minutes"
-            value={blocktime.minutes}
-            isRunning={isRunning}
-            onChange={(e) => {
-              let val = parseInt(e.target.value, 10);
-              if (!isNaN(val)) {
-                val = val > 59 ? 59 : val;
-                val = val >= 0 ? val : 0;
-              }
-              setBlocktime({
-                ...blocktime,
-                minutes: val,
-              });
-            }}
-          />
-          <Counter
-            text="Seconds"
-            value={blocktime.seconds}
-            isRunning={isRunning}
-            onChange={(e) => {
-              let val = parseInt(e.target.value, 10);
-              if (!isNaN(val)) {
-                val = val > 59 ? 59 : val;
-                val = val >= 0 ? val : 0;
-              }
-              setBlocktime({
-                ...blocktime,
-                seconds: val,
-              });
-            }}
-          />
-        </Column>
-      </div>
-
-      <div style={{ gridArea: "start" }}>
-        <StartButton
-          text="Start Blocker"
-          onClick={startBlocker}
-          isRunning={isRunning}
-        />
-      </div>
-
-      <div
-        style={{
-          gridArea: "blocklist",
-          overflowY: "auto",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "20px",
+          padding: "20px",
+          height: "100vh",
+          boxSizing: "border-box",
         }}
       >
-        <Column
-          title="Blocklist"
-          buttonTitle="Add"
-          isRunning={isRunning}
-          onClick={() => {}}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexFlow: "column",
-              gap: "10px",
-              overflowY: "auto",
+        <div style={{ gridArea: "top" }}>
+          <Title buttonTitle="Give Feedback" />
+        </div>
+
+        <div style={{ gridArea: "blocktime" }}>
+          <Column
+            title="Blocktime"
+            buttonTitle="Reset"
+            isRunning={isRunning}
+            onClick={() => {
+              setBlocktime({
+                days: "",
+                hours: "",
+                minutes: "",
+                seconds: "",
+              });
             }}
           >
-            <Entry text="reddit.com" isRunning={isRunning} />
-            <Entry text="youtube.com" isRunning={isRunning} />
-            <Entry text="reddit.com" isRunning={isRunning} />
-            <Entry text="youtube.com" isRunning={isRunning} />
-            <Entry text="reddit.com" isRunning={isRunning} />
-            <Entry text="youtube.com" isRunning={isRunning} />
-            <Entry text="reddit.com" isRunning={isRunning} />
-            <Entry text="youtube.com" isRunning={isRunning} />
-            <Entry text="reddit.com" isRunning={isRunning} />
-            <Entry text="youtube.com" isRunning={isRunning} />
-            <Entry text="reddit.com" isRunning={isRunning} />
-            <Entry text="youtube.com" isRunning={isRunning} />
-          </div>
-        </Column>
+            <Counter
+              text="Days"
+              value={blocktime.days}
+              onChange={(e) => {
+                let val = e.target.value;
+                const number = parseInt(val, 10);
+
+                if (val == "") {
+                  setBlocktime({
+                    ...blocktime,
+                    days: "",
+                  });
+                } else if (!isNaN(number) && number >= 0) {
+                  setBlocktime({
+                    ...blocktime,
+                    days: Math.min(number, 7),
+                  });
+                }
+              }}
+            />
+            <Counter
+              text="Hours"
+              value={blocktime.hours}
+              onChange={(e) => {
+                let val = e.target.value;
+                const number = parseInt(val, 10);
+
+                if (val == "") {
+                  setBlocktime({
+                    ...blocktime,
+                    hours: "",
+                  });
+                } else if (!isNaN(number) && number >= 0) {
+                  setBlocktime({
+                    ...blocktime,
+                    hours: Math.min(number, 23),
+                  });
+                }
+              }}
+            />
+            <Counter
+              text="Minutes"
+              value={blocktime.minutes}
+              onChange={(e) => {
+                let val = e.target.value;
+                const number = parseInt(val, 10);
+
+                if (val == "") {
+                  setBlocktime({
+                    ...blocktime,
+                    minutes: "",
+                  });
+                } else if (!isNaN(number) && number >= 0) {
+                  setBlocktime({
+                    ...blocktime,
+                    minutes: Math.min(number, 59),
+                  });
+                }
+              }}
+            />
+            <Counter
+              text="Seconds"
+              value={blocktime.seconds}
+              onChange={(e) => {
+                let val = e.target.value;
+                const number = parseInt(val, 10);
+
+                if (val == "") {
+                  setBlocktime({
+                    ...blocktime,
+                    seconds: "",
+                  });
+                } else if (!isNaN(number) && number >= 0) {
+                  setBlocktime({
+                    ...blocktime,
+                    seconds: Math.min(number, 59),
+                  });
+                }
+              }}
+            />
+          </Column>
+        </div>
+
+        <div style={{ gridArea: "start" }}>
+          <StartButton
+            text="Start Blocker"
+            onClick={startBlocker}
+            isRunning={isRunning}
+          />
+        </div>
+
+        <div
+          style={{
+            gridArea: "blocklist",
+            overflowY: "auto",
+          }}
+        >
+          <Column
+            title="Blocklist"
+            buttonTitle="Add"
+            isRunning={isRunning}
+            onClick={() => {
+              // add website
+              toggleDialog();
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexFlow: "column",
+                gap: "10px",
+                overflowY: "auto",
+              }}
+            >
+              {blocklist.map((value, key) => (
+                <Entry
+                  text={value}
+                  isRunning={isRunning}
+                  key={key}
+                  onClick={() => {
+                    // remove element from blocklist
+                    const updatedBlocklist = blocklist.filter(
+                      (_, i) => i !== key
+                    );
+                    setBlocklist(updatedBlocklist);
+                  }}
+                />
+              ))}
+            </div>
+          </Column>
+        </div>
       </div>
     </div>
   );

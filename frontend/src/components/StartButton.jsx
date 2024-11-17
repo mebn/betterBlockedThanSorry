@@ -31,7 +31,7 @@ export default ({ text, onClick, isRunning }) => {
       }}
       onClick={onClick}
     >
-      <h2>{text}</h2>
+      <h2 style={{ cursor: "pointer" }}>{text}</h2>
     </button>
   );
 };

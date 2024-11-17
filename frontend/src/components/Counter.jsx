@@ -1,4 +1,4 @@
-export default ({ text, value, onChange, isRunning }) => {
+export default ({ text, value, onChange }) => {
   return (
     <div
       style={{
@@ -21,15 +21,12 @@ export default ({ text, value, onChange, isRunning }) => {
           fontSize: "22px",
           outline: "none",
         }}
-        type="number"
-        name={text}
-        id={text}
+        type="text"
+        placeholder="0"
         value={value}
         onChange={onChange}
-        placeholder="0"
-        disabled={isRunning}
       />
-      <h4>{text}</h4>
+      {text}
     </div>
   );
 };
