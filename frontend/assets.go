@@ -1,6 +1,6 @@
-// This file is used to get the assets to the cmd/main/ module.
+// This file is used to get the assets to the cmd/main/ package.
 
-package assets
+package frontend
 
 import "embed"
 

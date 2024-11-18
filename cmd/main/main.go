@@ -1,7 +1,7 @@
 package main
 
 import (
-	assets "github.com/mebn/betterBlockedThanSorry/frontend"
+	"github.com/mebn/betterBlockedThanSorry/frontend"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -18,7 +18,7 @@ func main() {
 		Height:        510,
 		DisableResize: true,
 		AssetServer: &assetserver.Options{
-			Assets: assets.Assets,
+			Assets: frontend.Assets,
 		},
 		BackgroundColour: &options.RGBA{R: 242, G: 242, B: 242, A: 1},
 		OnStartup:        app.startup,
