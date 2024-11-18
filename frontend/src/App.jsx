@@ -242,6 +242,7 @@ function App() {
           >
             <Counter
               text="Days"
+              isRunning={isRunning}
               value={blocktime.days}
               onChange={(e) => {
                 let val = e.target.value;
@@ -262,6 +263,7 @@ function App() {
             />
             <Counter
               text="Hours"
+              isRunning={isRunning}
               value={blocktime.hours}
               onChange={(e) => {
                 let val = e.target.value;
@@ -282,6 +284,7 @@ function App() {
             />
             <Counter
               text="Minutes"
+              isRunning={isRunning}
               value={blocktime.minutes}
               onChange={(e) => {
                 let val = e.target.value;
@@ -302,6 +305,7 @@ function App() {
             />
             <Counter
               text="Seconds"
+              isRunning={isRunning}
               value={blocktime.seconds}
               onChange={(e) => {
                 let val = e.target.value;

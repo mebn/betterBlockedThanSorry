@@ -1,4 +1,4 @@
-export default ({ text, value, onChange }) => {
+export default ({ text, value, onChange, isRunning }) => {
   return (
     <div
       style={{
@@ -25,6 +25,7 @@ export default ({ text, value, onChange }) => {
         placeholder="0"
         value={value}
         onChange={onChange}
+        disabled={isRunning}
       />
       {text}
     </div>
