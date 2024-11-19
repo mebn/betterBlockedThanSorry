@@ -227,7 +227,7 @@ function App() {
 
       <div style={mainLayoutStyle}>
         <div style={{ gridArea: "top" }}>
-          <Title buttonTitle="Give Feedback" />
+          <Title buttonText="Give Feedback" />
         </div>
 
         <div style={{ gridArea: "blocktime" }}>

@@ -1,35 +1,25 @@
-export default ({ buttonTitle }) => {
+import RoundButton from "./RoundButton";
+
+export default ({ buttonText }) => {
+  const containerStyle = {
+    color: "#4E67D6",
+    lineHeight: "30px",
+    fontWeight: "bold",
+    display: "flex",
+    flexFlow: "row",
+    justifyContent: "space-between",
+    alignItems: "start",
+  };
+
   return (
-    <div
-      style={{
-        color: "#4E67D6",
-        lineHeight: "30px",
-        fontWeight: "bold",
-        display: "flex",
-        flexFlow: "row",
-        justifyContent: "space-between",
-        alignItems: "start",
-      }}
-    >
+    <div style={containerStyle}>
       <h1>
         Better Blocked
         <br />
         Than Sorry
       </h1>
 
-      <button
-        style={{
-          color: "#EFEFEF",
-          background: "#4E67D6",
-          padding: "10px 20px",
-          border: "none",
-          borderRadius: "20px",
-          cursor: "pointer",
-          fontWeight: "bold",
-        }}
-      >
-        {buttonTitle}
-      </button>
+      {buttonText ? <RoundButton text={buttonText} /> : <></>}
     </div>
   );
 };
