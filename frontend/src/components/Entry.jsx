@@ -1,32 +1,31 @@
-export default ({ text, isRunning, onClick }) => {
+import RoundButton from "./RoundButton";
+
+export default ({
+  title,
+  buttonText,
+  onClick,
+  disabled,
+  hidden,
+  monochrome,
+}) => {
+  const containerStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: "10px",
+  };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderRadius: "10px",
-      }}
-    >
-      <p>{text}</p>
-      <button
-        style={{
-          visibility: isRunning ? "hidden" : "visible",
-          background: "#EFEFEF",
-          color: "#4E67D6",
-          width: "30px",
-          height: "30px",
-          // marginRight: "10px",
-          border: "none",
-          borderRadius: "20px",
-          cursor: "pointer",
-          fontWeight: "bold",
-        }}
-        disabled={isRunning}
+    <div style={containerStyle}>
+      <p>{title}</p>
+
+      <RoundButton
+        text={buttonText}
         onClick={onClick}
-      >
-        &#x1F5D1;
-      </button>
+        disabled={disabled}
+        hidden={hidden}
+        monochrome={monochrome}
+      />
     </div>
   );
 };

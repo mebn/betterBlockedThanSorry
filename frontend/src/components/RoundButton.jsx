@@ -1,8 +1,10 @@
-export default ({ text, onClick, disabled, hidden }) => {
+export default ({ text, onClick, disabled, hidden, monochrome }) => {
+  const monochromeBackground = monochrome ? "#EFEFEF" : "#4E67D6";
+
   const buttonStyle = {
     visibility: hidden ? "hidden" : "visible",
-    color: "#EFEFEF",
-    background: disabled ? "#7E7E7E" : "#4E67D6",
+    color: monochrome ? "black" : "#EFEFEF",
+    background: disabled ? "#7E7E7E" : monochromeBackground,
     cursor: disabled ? "not-allowed" : "pointer",
     padding: "10px 20px",
     border: "none",

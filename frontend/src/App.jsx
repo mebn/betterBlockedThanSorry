@@ -303,8 +303,11 @@ function App() {
             >
               {blocklist.map((value, key) => (
                 <Entry
-                  text={value}
-                  isRunning={isRunning}
+                  title={value}
+                  buttonText="&#x1F5D1;"
+                  hidden={isRunning}
+                  disabled={isRunning}
+                  monochrome={true}
                   key={key}
                   onClick={() => {
                     // remove element from blocklist
