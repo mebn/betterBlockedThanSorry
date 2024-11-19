@@ -233,8 +233,9 @@ function App() {
         <div style={{ gridArea: "blocktime" }}>
           <Column
             title="Blocktime"
-            buttonTitle="Reset"
-            isRunning={isRunning}
+            buttonText="Reset"
+            disabled={isRunning}
+            // hidden={isRunning}
             onClick={resetBlocktime}
           >
             <Counter
@@ -291,12 +292,7 @@ function App() {
             overflowY: "auto",
           }}
         >
-          <Column
-            title="Blocklist"
-            buttonTitle="Add"
-            isRunning={isRunning}
-            onClick={toggleDialog}
-          >
+          <Column title="Blocklist" buttonText="Add" onClick={toggleDialog}>
             <div
               style={{
                 display: "flex",

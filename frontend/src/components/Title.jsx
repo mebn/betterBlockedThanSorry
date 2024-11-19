@@ -19,7 +19,7 @@ export default ({ buttonText }) => {
         Than Sorry
       </h1>
 
-      {buttonText ? <RoundButton text={buttonText} /> : <></>}
+      {buttonText && <RoundButton text={buttonText} />}
     </div>
   );
 };
