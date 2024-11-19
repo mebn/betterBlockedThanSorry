@@ -42,6 +42,7 @@ export default ({
     padding: "10px",
     fontSize: "22px",
     outline: "none",
+    cursor: "auto",
   };
 
   return (
