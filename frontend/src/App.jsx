@@ -278,9 +278,10 @@ function App() {
 
         <div style={{ gridArea: "start" }}>
           <StartButton
-            text="Start Blocker"
+            textEnabled="Start Blocker"
+            textDisabled="Blocker started"
             onClick={startBlocker}
-            isRunning={isRunning}
+            disabled={isRunning}
           />
         </div>
 
