@@ -19,6 +19,7 @@ function App() {
     minutes: "",
     seconds: "",
   });
+
   const [blocklist, setBlocklist] = useState([
     "svt.se",
     "reddit.com",
@@ -41,6 +42,15 @@ function App() {
     dialogRef.current.hasAttribute("open")
       ? dialogRef.current.close()
       : dialogRef.current.showModal();
+  };
+
+  const resetBlocktime = () => {
+    setBlocktime({
+      days: "",
+      hours: "",
+      minutes: "",
+      seconds: "",
+    });
   };
 
   useEffect(() => {
@@ -72,13 +82,7 @@ function App() {
           });
 
           if (timeLeft <= 0) {
-            setBlocktime({
-              days: "",
-              hours: "",
-              minutes: "",
-              seconds: "",
-            });
-
+            resetBlocktime();
             setIsRunning(false);
           }
         }, 1000);
@@ -112,6 +116,20 @@ function App() {
     if (daemonStatus) {
       setIsRunning(daemonStatus);
     }
+  };
+
+  const mainLayoutStyle = {
+    display: "grid",
+    gridTemplateAreas: `
+    "top top"
+    "blocktime blocklist"
+    "start blocklist"
+  `,
+    gridTemplateColumns: "1fr 1fr",
+    gap: "20px",
+    padding: "20px",
+    height: "100vh",
+    boxSizing: "border-box",
   };
 
   return (
@@ -207,21 +225,7 @@ function App() {
         </div>
       </dialog>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateAreas: `
-          "top top"
-          "blocktime blocklist"
-          "start blocklist"
-        `,
-          gridTemplateColumns: "1fr 1fr",
-          gap: "20px",
-          padding: "20px",
-          height: "100vh",
-          boxSizing: "border-box",
-        }}
-      >
+      <div style={mainLayoutStyle}>
         <div style={{ gridArea: "top" }}>
           <Title buttonTitle="Give Feedback" />
         </div>
@@ -231,98 +235,43 @@ function App() {
             title="Blocktime"
             buttonTitle="Reset"
             isRunning={isRunning}
-            onClick={() => {
-              setBlocktime({
-                days: "",
-                hours: "",
-                minutes: "",
-                seconds: "",
-              });
-            }}
+            onClick={resetBlocktime}
           >
             <Counter
-              text="Days"
-              isRunning={isRunning}
+              title="Days"
               value={blocktime.days}
-              onChange={(e) => {
-                let val = e.target.value;
-                const number = parseInt(val, 10);
-
-                if (val == "") {
-                  setBlocktime({
-                    ...blocktime,
-                    days: "",
-                  });
-                } else if (!isNaN(number) && number >= 0) {
-                  setBlocktime({
-                    ...blocktime,
-                    days: Math.min(number, 7),
-                  });
-                }
-              }}
+              disabled={isRunning}
+              blocktime={blocktime}
+              blocktimeEntry={"days"}
+              setBlocktime={setBlocktime}
+              maxVal={7}
             />
             <Counter
-              text="Hours"
-              isRunning={isRunning}
+              title="Hours"
               value={blocktime.hours}
-              onChange={(e) => {
-                let val = e.target.value;
-                const number = parseInt(val, 10);
-
-                if (val == "") {
-                  setBlocktime({
-                    ...blocktime,
-                    hours: "",
-                  });
-                } else if (!isNaN(number) && number >= 0) {
-                  setBlocktime({
-                    ...blocktime,
-                    hours: Math.min(number, 23),
-                  });
-                }
-              }}
+              disabled={isRunning}
+              blocktime={blocktime}
+              blocktimeEntry={"hours"}
+              setBlocktime={setBlocktime}
+              maxVal={23}
             />
             <Counter
-              text="Minutes"
-              isRunning={isRunning}
+              title="Minutes"
               value={blocktime.minutes}
-              onChange={(e) => {
-                let val = e.target.value;
-                const number = parseInt(val, 10);
-
-                if (val == "") {
-                  setBlocktime({
-                    ...blocktime,
-                    minutes: "",
-                  });
-                } else if (!isNaN(number) && number >= 0) {
-                  setBlocktime({
-                    ...blocktime,
-                    minutes: Math.min(number, 59),
-                  });
-                }
-              }}
+              disabled={isRunning}
+              blocktime={blocktime}
+              blocktimeEntry={"minutes"}
+              setBlocktime={setBlocktime}
+              maxVal={59}
             />
             <Counter
-              text="Seconds"
-              isRunning={isRunning}
+              title="Seconds"
               value={blocktime.seconds}
-              onChange={(e) => {
-                let val = e.target.value;
-                const number = parseInt(val, 10);
-
-                if (val == "") {
-                  setBlocktime({
-                    ...blocktime,
-                    seconds: "",
-                  });
-                } else if (!isNaN(number) && number >= 0) {
-                  setBlocktime({
-                    ...blocktime,
-                    seconds: Math.min(number, 59),
-                  });
-                }
-              }}
+              disabled={isRunning}
+              blocktime={blocktime}
+              blocktimeEntry={"seconds"}
+              setBlocktime={setBlocktime}
+              maxVal={59}
             />
           </Column>
         </div>
@@ -345,10 +294,7 @@ function App() {
             title="Blocklist"
             buttonTitle="Add"
             isRunning={isRunning}
-            onClick={() => {
-              // add website
-              toggleDialog();
-            }}
+            onClick={toggleDialog}
           >
             <div
               style={{
