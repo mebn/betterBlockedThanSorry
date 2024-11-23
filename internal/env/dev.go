@@ -7,7 +7,6 @@ import (
 )
 
 var EtcHostsPath = "/etc/hosts"
-var LogPath = "/tmp/bbts.log"
+var DBPath = "/tmp/badger"
 var DaemonName = "com.betterblockedthansorry.bbts"
 var ProgramPath = fmt.Sprintf("%s/../../build/bin/bbts_daemon", getCurrentFilePath())
-var DBPath = "/tmp/badger"

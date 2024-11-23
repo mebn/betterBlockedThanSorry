@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
 	"time"
 
+	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
 	"github.com/mebn/betterBlockedThanSorry/internal/initsystem"
 )
@@ -14,17 +13,25 @@ import (
 type App struct {
 	ctx    context.Context
 	daemon initsystem.InitSystemType
+	db     database.DB
 }
 
 func NewApp() *App {
-	daemon, err := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
+	// TODO: check if daemon is already running?
 
+	daemon, err := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: %s", err))
+	}
+
+	db, err := database.NewDB(env.DBPath)
 	if err != nil {
 		panic(fmt.Sprintf("ERROR: %s", err))
 	}
 
 	return &App{
 		daemon: daemon,
+		db:     db,
 	}
 }
 
@@ -34,19 +41,41 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
-	endTime := time.Now().Add(time.Second * time.Duration(blocktime)).Unix()
-	endTimeStr := strconv.FormatInt(endTime, 10)
-	blocklist = append([]string{endTimeStr}, blocklist...)
+func (a *App) shutdown(ctx context.Context) {
+	a.ctx = ctx
+	a.db.CloseDB()
+}
 
-	err := a.daemon.Start(blocklist)
-	if err != nil {
-		fmt.Println(env.DaemonName, env.EtcHostsPath, env.LogPath, env.ProgramPath)
-		fmt.Printf("Error starting blocker: %s\n", err)
+// daemon stuff
+
+func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
+	if blocktime == 0 {
 		return 0
 	}
 
-	return endTime
+	isRunning := a.daemon.IsRunning()
+	if isRunning {
+		return 0
+	}
+
+	endtime := time.Now().Add(time.Second * time.Duration(blocktime)).Unix()
+
+	err := a.db.SetEndtime(endtime)
+	if err != nil {
+		return 0
+	}
+
+	// temp
+	et, _ := a.db.GetEndtime()
+	println("#### endtime: ", et)
+
+	err = a.daemon.Start()
+	if err != nil {
+		fmt.Println(env.DaemonName, env.EtcHostsPath, env.DBPath, env.ProgramPath)
+		return 0
+	}
+
+	return endtime
 }
 
 func (a *App) GetDaemonRunningStatus() bool {
@@ -59,10 +88,31 @@ func (a *App) GetDaemonRunningStatus() bool {
 	return isRunning
 }
 
-func (a *App) GetEndTime(filename string) int64 {
-	contentB, _ := os.ReadFile(env.LogPath)
-	content := string(contentB)
-	endTime, _ := strconv.ParseInt(content, 10, 64)
+// endtime stuff
 
-	return endTime
+func (a *App) GetEndtimeDB() int64 {
+	endtime, err := a.db.GetEndtime()
+	if err != nil {
+		return 0
+	}
+
+	return endtime
+}
+
+// blocklist stuff
+
+func (a *App) GetBlocklistDB() []string {
+	blocklist, err := a.db.GetBlocklist()
+	if err != nil {
+		return []string{}
+	}
+
+	return blocklist
+}
+
+func (a *App) SetBlocklistDB(blocklist []string) {
+	// TOOD: error handling
+	err := a.db.SetBlocklist(blocklist)
+	if err != nil {
+	}
 }

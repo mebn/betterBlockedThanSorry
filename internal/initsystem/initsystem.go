@@ -7,7 +7,7 @@ import (
 )
 
 type InitSystemType interface {
-	Start(args []string) error
+	Start(args ...string) error
 	Stop() error
 	IsRunning() bool
 }

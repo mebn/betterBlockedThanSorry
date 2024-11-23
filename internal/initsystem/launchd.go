@@ -21,8 +21,8 @@ func newLaunchd(daemonName, program string) *Launchd {
 	}
 }
 
-func (l *Launchd) Start(args []string) error {
-	err := l.createConfigFile(args)
+func (l *Launchd) Start(args ...string) error {
+	err := l.createConfigFile(args...)
 	if err != nil {
 		return err
 	}
@@ -56,13 +56,15 @@ func (l *Launchd) IsRunning() bool {
 		return false
 	}
 
+	println("isrunning: ", string(out))
+
 	parts := strings.Fields(string(out))
 
 	return !(len(parts) != 3 || parts[0] == "-")
 }
 
-func (l *Launchd) createConfigFile(args []string) error {
-	file, err := os.OpenFile(l.daemonPath, os.O_CREATE|os.O_WRONLY, 0644)
+func (l *Launchd) createConfigFile(args ...string) error {
+	file, err := os.OpenFile(l.daemonPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}

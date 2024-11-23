@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   GetDaemonRunningStatus,
-  GetEndTime,
+  GetEndtimeDB,
+  SetBlocklistDB,
+  GetBlocklistDB,
   StartBlocker,
 } from "../../wailsjs/go/main/App";
 import StartButton from "../components/StartButton";
@@ -28,6 +30,16 @@ function App() {
     setBlocktime({ days: "", hours: "", minutes: "", seconds: "" });
   };
 
+  // used to get blocklist
+  useEffect(() => {
+    const f = async () => {
+      const newBlocklist = await GetBlocklistDB();
+      setBlocklist(newBlocklist);
+    };
+
+    f();
+  }, []);
+
   useEffect(() => {
     let intervalId;
 
@@ -40,8 +52,11 @@ function App() {
       if (isRunning) {
         let fetchedEndTime = endTime;
 
+        console.log("fetchedEndTime: ", fetchedEndTime);
+
         if (fetchedEndTime == 0) {
-          fetchedEndTime = await GetEndTime();
+          fetchedEndTime = await GetEndtimeDB();
+          console.log("fetchedEndTime: ", fetchedEndTime);
           setEndTime(fetchedEndTime);
         }
 
@@ -88,6 +103,7 @@ function App() {
     setEndTime(newEndTime);
 
     const daemonStatus = await GetDaemonRunningStatus();
+    console.log(newEndTime, daemonStatus);
     if (daemonStatus) {
       setIsRunning(daemonStatus);
     }
@@ -112,7 +128,11 @@ function App() {
       <Dialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        onAddWebsite={(website) => setBlocklist([...blocklist, website])}
+        onAddWebsite={(website) => {
+          const newBlocklist = [...blocklist, website];
+          SetBlocklistDB(newBlocklist);
+          setBlocklist(newBlocklist);
+        }}
       />
 
       <div style={mainLayoutStyle}>
@@ -125,7 +145,6 @@ function App() {
             title="Blocktime"
             buttonText="Reset"
             disabled={isRunning}
-            // hidden={isRunning}
             onClick={resetBlocktime}
           >
             <Counter
@@ -205,10 +224,9 @@ function App() {
                   key={key}
                   onClick={() => {
                     // remove element from blocklist
-                    const updatedBlocklist = blocklist.filter(
-                      (_, i) => i !== key
-                    );
-                    setBlocklist(updatedBlocklist);
+                    const newBlocklist = blocklist.filter((_, i) => i !== key);
+                    SetBlocklistDB(newBlocklist);
+                    setBlocklist(newBlocklist);
                   }}
                 />
               ))}

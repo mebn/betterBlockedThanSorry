@@ -17,7 +17,7 @@ func TestEndtime(t *testing.T) {
 	defer db.CloseDB()
 
 	// testing
-	want := "1337"
+	want := int64(1337)
 
 	got, err := db.GetEndtime()
 	if err == nil {
