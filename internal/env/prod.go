@@ -6,5 +6,6 @@ var EtcHostsPath = "/etc/hosts"
 var LogPath = "/tmp/bbts.log"
 var DaemonName = "com.betterblockedthansorry.bbts"
 
-// needs to be installed somewhere else to prevent user from uninstalling
+// TODO: needs to be installed somewhere else to prevent user from uninstalling
 var ProgramPath = "/Applications/BetterBlockedThanSorry.app/Contents/MacOS/bbts_daemon"
+var DBPath = "/tmp/badger"

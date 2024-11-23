@@ -77,6 +77,7 @@ export default ({ isOpen, onClose, onAddWebsite }) => {
             padding: "10px",
             fontSize: "16px",
             outline: "none",
+            cursor: "auto",
           }}
           type="text"
           placeholder="www.website.com"
