@@ -22,7 +22,7 @@ function App() {
   });
 
   const [blocklist, setBlocklist] = useState([]);
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(true);
   const [endTime, setEndTime] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
