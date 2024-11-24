@@ -65,13 +65,8 @@ func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
 		return 0
 	}
 
-	// temp
-	et, _ := a.db.GetEndtime()
-	println("#### endtime: ", et)
-
 	err = a.daemon.Start()
 	if err != nil {
-		fmt.Println(env.DaemonName, env.EtcHostsPath, env.DBPath, env.ProgramPath)
 		return 0
 	}
 

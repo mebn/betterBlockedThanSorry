@@ -56,8 +56,6 @@ func (l *Launchd) IsRunning() bool {
 		return false
 	}
 
-	println("isrunning: ", string(out))
-
 	parts := strings.Fields(string(out))
 
 	return !(len(parts) != 3 || parts[0] == "-")

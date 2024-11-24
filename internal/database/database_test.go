@@ -17,12 +17,18 @@ func TestEndtime(t *testing.T) {
 	defer db.CloseDB()
 
 	// testing
-	want := int64(1337)
+	want := int64(0)
 
 	got, err := db.GetEndtime()
-	if err == nil {
-		t.Fatal("We should get an error here. Database should be empty.", got, err)
+	if err != nil {
+		t.Fatal("getendtime failed: ", err)
 	}
+
+	if got != want {
+		t.Fatal(got, want)
+	}
+
+	want = int64(1337)
 
 	err = db.SetEndtime(want)
 	if err != nil {
@@ -54,12 +60,18 @@ func TestBlocklist(t *testing.T) {
 	defer db.CloseDB()
 
 	// testing
-	want := []string{"a", "b", "c"}
+	want := []string{}
 
 	got, err := db.GetBlocklist()
-	if err == nil {
-		t.Fatal("We should get an error here. Database should be empty.", got, err)
+	if err != nil {
+		t.Fatal("getBlocklist failed: ", err)
 	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal(got, want)
+	}
+
+	want = []string{"a", "b", "c"}
 
 	err = db.SetBlocklist(want)
 	if err != nil {
@@ -68,7 +80,7 @@ func TestBlocklist(t *testing.T) {
 
 	got, err = db.GetBlocklist()
 	if err != nil {
-		t.Fatal("getendtime failed: ", err)
+		t.Fatal("getBlocklist failed: ", err)
 	}
 
 	if !reflect.DeepEqual(got, want) {

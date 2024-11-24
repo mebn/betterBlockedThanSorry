@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/mebn/betterBlockedThanSorry/internal/blocker"
@@ -13,17 +12,23 @@ import (
 func main() {
 	// get data from database
 	db, err := database.NewDB(env.DBPath)
-	os.WriteFile("/tmp/bbtslogger", []byte(fmt.Sprintf("db error: %s\n", err)), 0644)
-	handleError(err, "Failed to load the database")
+	if err != nil {
+		fmt.Printf("[ERR] Failed to load the database: %s", err)
+		return
+	}
 	defer db.CloseDB()
 
 	endtime, err := db.GetEndtime()
-	handleError(err, "Failed to get endtime")
+	if err != nil {
+		fmt.Printf("[ERR] Failed to get endtime: %s", err)
+		return
+	}
 
 	blocklist, err := db.GetBlocklist()
-	handleError(err, "Failed to get blocklist")
-
-	os.WriteFile("/tmp/bbtslogger", []byte(fmt.Sprintln(endtime, blocklist)), 0644)
+	if err != nil {
+		fmt.Printf("[ERR] Failed to get blocklist: %s", err)
+		return
+	}
 
 	// prepare /etc/hosts file
 	etcHosts := blocker.NewEtcHosts(env.EtcHostsPath, blocklist)
@@ -44,21 +49,11 @@ func main() {
 			etcHosts.RemoveBlock()
 			return
 		case <-ticker.C:
-			// TODO: write endtime back to database
-			// incase user manually edits while blocker
-			// is running?
-
+			// TODO: handle new urls addad after start
 			if etcHosts.IsTamperedWith() {
 				etcHosts.RemoveBlock()
 				etcHosts.AddBlock()
 			}
 		}
-	}
-}
-
-func handleError(err error, msg string) {
-	if err != nil {
-		fmt.Printf("[ERR] %s: %s", msg, err)
-		return
 	}
 }

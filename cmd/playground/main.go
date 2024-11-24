@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -22,45 +21,72 @@ func main() {
 		log.Printf("Failed to set journal mode: %v", err)
 	}
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS main (
+	createTableRuns(db)
+	createTableURLS(db)
+
+	addURL(db, "a")
+	addURL(db, "b")
+	addURL(db, "c")
+
+	start(db, 9991)
+	start(db, 9992)
+	start(db, 9993)
+
+	printRuns(db)
+	printURLS(db)
+}
+
+func createTableRuns(db *sql.DB) {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS runs (
 			id INTEGER PRIMARY KEY,
 			starttime INTEGER NOT NULL,
-			endtime INTEGER NOT NULL,
-			blocklist TEXT NOT NULL
+			endtime INTEGER NOT NULL
 		)
 	`)
 	if err != nil {
 		log.Fatalf("Failed to create table: %v", err)
 	}
-
-	add(db, 9991, []string{"a", "b"})
-	add(db, 9992, []string{"b"})
-	add(db, 9993, []string{"a"})
-
-	printRows(db)
 }
 
-func add(db *sql.DB, endtime int64, blocklist []string) {
-	blocklistJSON, err := json.Marshal(blocklist)
+func createTableURLS(db *sql.DB) {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS urls (
+			id INTEGER PRIMARY KEY,
+			url TEXT NOT NULL
+		)
+	`)
 	if err != nil {
-		log.Printf("Failed to serialize blocklist: %v", err)
-		return
+		log.Fatalf("Failed to create table: %v", err)
 	}
+}
 
-	_, err = db.Exec(`
-		INSERT INTO main
-		(starttime, endtime, blocklist)
+func addURL(db *sql.DB, url string) {
+	_, err := db.Exec(`
+		INSERT INTO urls
+		(url)
 		VALUES
-		(?, ?, ?)
-	`, time.Now().Unix(), endtime, blocklistJSON)
+		(?)
+	`, url)
 	if err != nil {
 		log.Printf("Failed to insert row: %v", err)
 	}
 }
 
-func printRows(db *sql.DB) {
-	rows, err := db.Query(`SELECT id, starttime, endtime, blocklist FROM main`)
+func start(db *sql.DB, endtime int64) {
+	_, err := db.Exec(`
+		INSERT INTO runs
+		(starttime, endtime)
+		VALUES
+		(?, ?)
+	`, time.Now().Unix(), endtime)
+	if err != nil {
+		log.Printf("Failed to insert row: %v", err)
+	}
+}
+
+func printRuns(db *sql.DB) {
+	rows, err := db.Query(`SELECT id, starttime, endtime FROM runs`)
 	if err != nil {
 		log.Fatalf("Failed to query rows: %v", err)
 	}
@@ -70,24 +96,42 @@ func printRows(db *sql.DB) {
 		var id int64
 		var starttime int64
 		var endtime int64
-		var blocklistJSON string
 
-		err := rows.Scan(&id, &starttime, &endtime, &blocklistJSON)
+		err := rows.Scan(&id, &starttime, &endtime)
 		if err != nil {
 			log.Printf("Failed to scan row: %v", err)
 			continue
 		}
 
-		// Deserialize the blocklist
-		var blocklist []string
-		err = json.Unmarshal([]byte(blocklistJSON), &blocklist)
+		// Print the row
+		fmt.Printf("ID: %d, Starttime: %d, Endtime: %d\n", id, starttime, endtime)
+	}
+
+	// Check for errors during iteration
+	if err = rows.Err(); err != nil {
+		log.Printf("Error during row iteration: %v", err)
+	}
+}
+
+func printURLS(db *sql.DB) {
+	rows, err := db.Query(`SELECT id, url FROM urls`)
+	if err != nil {
+		log.Fatalf("Failed to query rows: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int64
+		var url string
+
+		err := rows.Scan(&id, &url)
 		if err != nil {
-			log.Printf("Failed to deserialize blocklist: %v", err)
+			log.Printf("Failed to scan row: %v", err)
 			continue
 		}
 
 		// Print the row
-		fmt.Printf("ID: %d, Starttime: %d, Endtime: %d, Blocklist: %v\n", id, starttime, endtime, blocklist)
+		fmt.Printf("ID: %d, url: %s\n", id, url)
 	}
 
 	// Check for errors during iteration

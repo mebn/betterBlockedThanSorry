@@ -1,29 +1,42 @@
 package database
 
 import (
+	"database/sql"
 	"encoding/json"
-	"strconv"
+	"os"
+	"path/filepath"
 
-	badger "github.com/dgraph-io/badger/v4"
-)
-
-type dBEntry string
-
-const (
-	accessKeyEntry dBEntry = "accesskey"
-	endtimeEntry   dBEntry = "endtime"
-	blocklistEntry dBEntry = "blocklist"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type DB struct {
 	path string
-	db   *badger.DB
+	db   *sql.DB
 }
 
 func NewDB(path string) (DB, error) {
-	options := badger.DefaultOptions(path).WithLogger(nil)
-	db, err := badger.Open(options)
+	// Ensure the directory exists
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return DB{}, err
+	}
 
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		return DB{}, err
+	}
+
+	_, err = db.Exec("PRAGMA journal_mode=WAL;")
+	if err != nil {
+		return DB{}, err
+	}
+
+	err = createTableMain(db)
+	if err != nil {
+		return DB{}, err
+	}
+
+	err = createMainEntry(db)
 	if err != nil {
 		return DB{}, err
 	}
@@ -34,6 +47,29 @@ func NewDB(path string) (DB, error) {
 	}, nil
 }
 
+func createTableMain(db *sql.DB) error {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS main (
+			id INTEGER PRIMARY KEY,
+			endtime INTEGER,
+			urls TEXT
+		)
+	`)
+
+	return err
+}
+
+func createMainEntry(db *sql.DB) error {
+	_, err := db.Exec(`
+	INSERT OR IGNORE INTO main
+	(id, endtime, urls)
+	VALUES
+	(1, 0, '[]')
+	`)
+
+	return err
+}
+
 func (d *DB) CloseDB() {
 	d.db.Close()
 }
@@ -41,100 +77,62 @@ func (d *DB) CloseDB() {
 // endtime
 
 func (d *DB) GetEndtime() (int64, error) {
-	var valCopy []byte
-
-	err := d.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(endtimeEntry))
-		if err != nil {
-			return err
-		}
-
-		valCopy, err = item.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return 0, err
-	}
-
-	endtime, _ := strconv.ParseInt(string(valCopy), 10, 64)
-
-	return endtime, nil
+	var endtime int64
+	err := d.db.QueryRow(`
+	SELECT endtime
+	FROM main
+	WHERE id=?
+	`, 1).Scan(&endtime)
+	return endtime, err
 }
 
 func (d *DB) SetEndtime(endtime int64) error {
-	err := d.db.Update(func(txn *badger.Txn) error {
-		err := txn.Set([]byte(endtimeEntry), []byte(strconv.FormatInt(endtime, 10)))
-		return err
-	})
-
+	_, err := d.db.Exec(`
+	UPDATE main
+	SET endtime=?
+	WHERE id=?
+	`, endtime, 1)
 	return err
 }
 
 // blocklist
 
 func (d *DB) GetBlocklist() ([]string, error) {
-	var valCopy []byte
-
-	err := d.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(blocklistEntry))
-		if err != nil {
-			return err
-		}
-
-		valCopy, err = item.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
+	var urls string
+	err := d.db.QueryRow(`
+	SELECT urls
+	FROM main
+	WHERE id=?
+	`, 1).Scan(&urls)
 	if err != nil {
 		return nil, err
 	}
 
-	slice, err := decodeStringSlice(valCopy)
-	if err != nil {
-		return nil, err
-	}
-
-	return slice, nil
+	return decodeStringSlice([]byte(urls))
 }
 
 func (d *DB) SetBlocklist(blocklist []string) error {
-	err := d.db.Update(func(txn *badger.Txn) error {
-		bytelist, err := encodeStringSlice(blocklist)
-		if err != nil {
-			return err
-		}
-
-		err = txn.Set([]byte(blocklistEntry), bytelist)
+	encoded, err := encodeStringSlice(blocklist)
+	if err != nil {
 		return err
-	})
+	}
 
+	_, err = d.db.Exec(`
+	UPDATE main
+	SET urls=?
+	WHERE id=?
+	`, string(encoded), 1)
 	return err
 }
 
 // helpers
 
 func encodeStringSlice(data []string) ([]byte, error) {
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	return jsonBytes, nil
+	return json.Marshal(data)
 }
 
 func decodeStringSlice(data []byte) ([]string, error) {
-	var result []string
+	result := []string{}
 	err := json.Unmarshal(data, &result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	return result, err
 }

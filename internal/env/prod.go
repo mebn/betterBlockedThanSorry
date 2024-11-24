@@ -3,7 +3,7 @@
 package env
 
 var EtcHostsPath = "/etc/hosts"
-var DBPath = "/tmp/badger"
+var DBPath = "/tmp/.bbtsdb/bbtsdb.db"
 var DaemonName = "com.betterblockedthansorry.bbts"
 
 // TODO: needs to be installed somewhere else to prevent user from uninstalling
