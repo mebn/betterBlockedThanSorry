@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/mebn/betterBlockedThanSorry/internal/blocker"
+	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
 	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
-	"github.com/mebn/betterBlockedThanSorry/internal/initsystem"
 )
 
 func main() {
@@ -60,7 +60,7 @@ func main() {
 		case <-durationTimer.C:
 			etcHosts.RemoveBlock()
 			// unload and remove?
-			daemon := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
+			daemon := daemon.NewDaemon(env.DaemonName, env.ProgramPath)
 			err = daemon.Stop()
 			if err != nil {
 				file.WriteString(fmt.Sprintf("[ERR] stopping daemon failed. err: %s\n", err))

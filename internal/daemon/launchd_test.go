@@ -1,4 +1,4 @@
-package initsystem
+package daemon
 
 import (
 	"testing"

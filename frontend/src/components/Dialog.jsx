@@ -67,7 +67,19 @@ export default ({ isOpen, onClose, onAddWebsite }) => {
           gap: "20px",
         }}
       >
-        <h3>Add new website to block</h3>
+        <h3
+          style={{
+            color: "#7E7E7E",
+          }}
+        >
+          Add new website to blocklist
+        </h3>
+
+        {/* <p style={{}}>
+          You don't need "http://", "https://", or "www".
+          <br />
+          You
+        </p> */}
 
         <input
           style={{

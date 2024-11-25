@@ -2,6 +2,7 @@ package env
 
 import (
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 )
@@ -9,6 +10,11 @@ import (
 func currentDir() string {
 	_, file, _, _ := runtime.Caller(1)
 	return filepath.Dir(file)
+}
+
+func Home() string {
+	currentUser, _ := user.Current()
+	return currentUser.HomeDir
 }
 
 func safePath(args ...string) string {

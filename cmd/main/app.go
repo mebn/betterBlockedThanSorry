@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
 	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
-	"github.com/mebn/betterBlockedThanSorry/internal/initsystem"
 )
 
 type App struct {
 	ctx    context.Context
-	daemon initsystem.InitSystemType
+	daemon daemon.DaemonInterface
 	db     database.DB
 }
 
 func NewApp() *App {
-	daemon := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
+	daemon := daemon.NewDaemon(env.DaemonName, env.ProgramPath)
 
 	db, err := database.NewDB(env.DBPath)
 	if err != nil {
