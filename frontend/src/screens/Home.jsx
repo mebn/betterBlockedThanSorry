@@ -10,7 +10,7 @@ import StartButton from "../components/StartButton";
 import Counter from "../components/Counter";
 import Column from "../components/Column";
 import Entry from "../components/Entry";
-import Title from "../components/Title";
+import Title from "../components/Header";
 import Dialog from "../components/Dialog";
 
 function App() {
