@@ -2,7 +2,6 @@ package initsystem
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 )
@@ -17,18 +16,25 @@ func newLaunchd(daemonName, program string) *Launchd {
 	return &Launchd{
 		programName: program,
 		daemonName:  daemonName,
-		daemonPath:  fmt.Sprintf("/Library/LaunchDaemons/%s.plist", daemonName),
+		daemonPath:  strings.ReplaceAll(fmt.Sprintf("/Library/LaunchDaemons/%s.plist", daemonName), `"`, `\"`),
 	}
 }
 
 func (l *Launchd) Start(args ...string) error {
-	err := l.createConfigFile(args...)
+	fileContent, err := l.createConfigFile(args...)
 	if err != nil {
 		return err
 	}
 
-	err = exec.Command("launchctl", "load", "-w", l.daemonPath).Run()
+	formattedFileContent := strings.ReplaceAll(fileContent, `"`, `\"`)
+
+	script := fmt.Sprintf(
+		`do shell script "echo '%s' > \"%s\" && launchctl load -w \"%s\"" with administrator privileges`,
+		formattedFileContent, l.daemonPath, l.daemonPath)
+
+	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
 	if err != nil {
+		fmt.Printf("error in Start(). out: %s, err: %s\n", out, err)
 		return err
 	}
 
@@ -36,12 +42,12 @@ func (l *Launchd) Start(args ...string) error {
 }
 
 func (l *Launchd) Stop() error {
-	err := exec.Command("launchctl", "unload", "-w", l.daemonPath).Run()
-	if err != nil {
-		return err
-	}
+	script := fmt.Sprintf(
+		`do shell script "launchctl unload -w \"%s\" && rm -fr \"%s\"" with administrator privileges`,
+		l.daemonPath, l.daemonPath,
+	)
 
-	err = l.deleteFile()
+	err := exec.Command("osascript", "-e", script).Run()
 	if err != nil {
 		return err
 	}
@@ -50,24 +56,10 @@ func (l *Launchd) Stop() error {
 }
 
 func (l *Launchd) IsRunning() bool {
-	cmd := fmt.Sprintf("launchctl list | grep %s", l.daemonName)
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		return false
-	}
-
-	parts := strings.Fields(string(out))
-
-	return !(len(parts) != 3 || parts[0] == "-")
+	return false
 }
 
-func (l *Launchd) createConfigFile(args ...string) error {
-	file, err := os.OpenFile(l.daemonPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
+func (l *Launchd) createConfigFile(args ...string) (string, error) {
 	// handle args
 	formattedArgs := ""
 	for _, arg := range args {
@@ -92,20 +84,5 @@ func (l *Launchd) createConfigFile(args ...string) error {
 </plist>
 `, l.daemonName, l.programName, formattedArgs)
 
-	// write to file
-	_, err = file.WriteString(fileContent)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (l *Launchd) deleteFile() error {
-	err := os.Remove(l.daemonPath)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return fileContent, nil
 }

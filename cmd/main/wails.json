@@ -1,7 +1,6 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "BetterBlockedThanSorry",
-  "outputfilename": "bbts_gui",
   "build:dir": "../../build",
   "frontend:dir": "../../frontend",
   "frontend:install": "npm install",

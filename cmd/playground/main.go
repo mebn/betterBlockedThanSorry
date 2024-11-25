@@ -1,141 +1,84 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
-	"time"
-
-	_ "github.com/mattn/go-sqlite3"
+	"os/exec"
+	"strings"
 )
 
+func createConfigFile() string {
+	fileContent := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>%s</string>
+		<key>ProgramArguments</key>
+		<array>
+			<string>%s</string>
+		</array>
+		<key>KeepAlive</key>
+		<true/>
+		<key>RunAtLoad</key>
+		<true/>
+	</dict>
+</plist>
+`, "somefile", "someprogram")
+
+	return fileContent
+}
+
 func main() {
-	db, err := sql.Open("sqlite3", "/tmp/mydb.db")
+	fileContent := createConfigFile()
+
+	formattedFileContent := strings.ReplaceAll(fileContent, `"`, `\"`)
+
+	script := fmt.Sprintf(
+		`do shell script "echo '%s' > %s" with administrator privileges`,
+		formattedFileContent, "/tmp/somefile")
+
+	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
 	if err != nil {
-		log.Fatalf("Failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	_, err = db.Exec("PRAGMA journal_mode=WAL;")
-	if err != nil {
-		log.Printf("Failed to set journal mode: %v", err)
+		fmt.Printf("error in Start(). out: %s, err: %s\n", out, err)
 	}
 
-	createTableRuns(db)
-	createTableURLS(db)
+	// currentUser, err := user.Current()
+	// if err != nil {
+	// 	log.Fatalf("Failed to get current user: %v", err)
+	// }
 
-	addURL(db, "a")
-	addURL(db, "b")
-	addURL(db, "c")
+	// println(currentUser.Uid)
 
-	start(db, 9991)
-	start(db, 9992)
-	start(db, 9993)
+	// if currentUser.Uid != "0" {
+	// 	// Get the full path to the current binary
+	// 	fullPath, err := os.Executable()
+	// 	if err != nil {
+	// 		log.Fatalf("Failed to get executable path: %v", err)
+	// 	}
+	// 	escapedPath := filepath.Clean(fullPath)
 
-	printRuns(db)
-	printURLS(db)
-}
+	// 	// Create AppleScript command to elevate privileges
+	// 	script := fmt.Sprintf(`do shell script "%s" with administrator privileges`, escapedPath)
+	// 	println(script)
 
-func createTableRuns(db *sql.DB) {
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS runs (
-			id INTEGER PRIMARY KEY,
-			starttime INTEGER NOT NULL,
-			endtime INTEGER NOT NULL
-		)
-	`)
-	if err != nil {
-		log.Fatalf("Failed to create table: %v", err)
-	}
-}
+	// 	// osascript -e 'do shell script "/Users/mebn/marcus/code/betterBlockedThanSorry/main" with administrator privileges'
+	// 	// osascript -e 'do shell script "echo fgfg" with administrator privileges'
 
-func createTableURLS(db *sql.DB) {
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS urls (
-			id INTEGER PRIMARY KEY,
-			url TEXT NOT NULL
-		)
-	`)
-	if err != nil {
-		log.Fatalf("Failed to create table: %v", err)
-	}
-}
+	// 	cmd := exec.Command("osascript", "-e", script)
 
-func addURL(db *sql.DB, url string) {
-	_, err := db.Exec(`
-		INSERT INTO urls
-		(url)
-		VALUES
-		(?)
-	`, url)
-	if err != nil {
-		log.Printf("Failed to insert row: %v", err)
-	}
-}
+	// 	// Run the command and capture output
+	// 	output, err := cmd.CombinedOutput()
+	// 	if err != nil {
+	// 		log.Fatalf("Failed to run with elevated privileges: %v\nOutput: %s", err, string(output))
+	// 	}
 
-func start(db *sql.DB, endtime int64) {
-	_, err := db.Exec(`
-		INSERT INTO runs
-		(starttime, endtime)
-		VALUES
-		(?, ?)
-	`, time.Now().Unix(), endtime)
-	if err != nil {
-		log.Printf("Failed to insert row: %v", err)
-	}
-}
+	// 	log.Println("App successfully ran with elevated privileges!")
+	// 	return
+	// }
 
-func printRuns(db *sql.DB) {
-	rows, err := db.Query(`SELECT id, starttime, endtime FROM runs`)
-	if err != nil {
-		log.Fatalf("Failed to query rows: %v", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id int64
-		var starttime int64
-		var endtime int64
-
-		err := rows.Scan(&id, &starttime, &endtime)
-		if err != nil {
-			log.Printf("Failed to scan row: %v", err)
-			continue
-		}
-
-		// Print the row
-		fmt.Printf("ID: %d, Starttime: %d, Endtime: %d\n", id, starttime, endtime)
-	}
-
-	// Check for errors during iteration
-	if err = rows.Err(); err != nil {
-		log.Printf("Error during row iteration: %v", err)
-	}
-}
-
-func printURLS(db *sql.DB) {
-	rows, err := db.Query(`SELECT id, url FROM urls`)
-	if err != nil {
-		log.Fatalf("Failed to query rows: %v", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id int64
-		var url string
-
-		err := rows.Scan(&id, &url)
-		if err != nil {
-			log.Printf("Failed to scan row: %v", err)
-			continue
-		}
-
-		// Print the row
-		fmt.Printf("ID: %d, url: %s\n", id, url)
-	}
-
-	// Check for errors during iteration
-	if err = rows.Err(); err != nil {
-		log.Printf("Error during row iteration: %v", err)
-	}
+	// // Now running as root
+	// for {
+	// 	fmt.Println("Now running as root")
+	// 	time.Sleep(1 * time.Second)
+	// }
 }

@@ -8,7 +8,7 @@ Run:
 
 ```sh
 # main (gui)
-sudo ./run.sh
+./run.sh
 
 # daemon
 go run cmd/daemon/bbts_daemon.go
@@ -29,5 +29,5 @@ go test ./...
 
 ```sh
 # build for MacOS
-sudo ./build/build_macos.sh
+./build/build_macos.sh
 ```

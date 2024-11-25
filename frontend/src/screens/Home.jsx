@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  GetDaemonRunningStatus,
   GetEndtimeDB,
   SetBlocklistDB,
   GetBlocklistDB,
   StartBlocker,
+  // GetCurrentTime,
 } from "../../wailsjs/go/main/App";
 import StartButton from "../components/StartButton";
 import Counter from "../components/Counter";
@@ -14,17 +14,16 @@ import Title from "../components/Title";
 import Dialog from "../components/Dialog";
 
 function App() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [endTime, setEndTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(true);
+  const [blocklist, setBlocklist] = useState([]);
   const [blocktime, setBlocktime] = useState({
     days: "",
     hours: "",
     minutes: "",
     seconds: "",
   });
-
-  const [blocklist, setBlocklist] = useState([]);
-  const [isRunning, setIsRunning] = useState(true);
-  const [endTime, setEndTime] = useState(0);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const resetBlocktime = () => {
     setBlocktime({ days: "", hours: "", minutes: "", seconds: "" });
@@ -43,40 +42,42 @@ function App() {
   useEffect(() => {
     let intervalId;
 
+    if (!isRunning) {
+      return;
+    }
+
     const initialize = async () => {
-      const daemonStatus = await GetDaemonRunningStatus();
-      if (daemonStatus) {
-        setIsRunning(daemonStatus);
+      let fetchedEndTime = await GetEndtimeDB();
+      let currentTime = Math.floor(Date.now() / 1000);
+
+      setIsRunning(fetchedEndTime >= currentTime);
+
+      if (!isRunning) {
+        return;
       }
 
-      if (isRunning) {
-        let fetchedEndTime = endTime;
+      setEndTime(fetchedEndTime);
 
-        console.log("fetchedEndTime: ", fetchedEndTime);
+      // can this be async?
+      intervalId = setInterval(() => {
+        let currentTime = Math.floor(Date.now() / 1000);
+        // let currentTime = await GetCurrentTime();
+        let timeLeft = fetchedEndTime - currentTime;
 
-        if (fetchedEndTime == 0) {
-          fetchedEndTime = await GetEndtimeDB();
-          console.log("fetchedEndTime: ", fetchedEndTime);
-          setEndTime(fetchedEndTime);
+        setBlocktime({
+          days: Math.floor(timeLeft / 86400) || "",
+          hours: Math.floor((timeLeft % 86400) / 3600) || "",
+          minutes: Math.floor((timeLeft % 3600) / 60) || "",
+          seconds: timeLeft % 60 || "",
+        });
+
+        if (timeLeft <= 0) {
+          resetBlocktime();
+          setEndTime(0);
+          setIsRunning(false);
+          clearInterval(intervalId);
         }
-
-        intervalId = setInterval(() => {
-          let currentTime = Math.floor(Date.now() / 1000);
-          let timeLeft = fetchedEndTime - currentTime;
-
-          setBlocktime({
-            days: Math.floor(timeLeft / 86400) || "",
-            hours: Math.floor((timeLeft % 86400) / 3600) || "",
-            minutes: Math.floor((timeLeft % 3600) / 60) || "",
-            seconds: timeLeft % 60 || "",
-          });
-
-          if (timeLeft <= 0) {
-            resetBlocktime();
-            setIsRunning(false);
-          }
-        }, 1000);
-      }
+      }, 1000);
     };
 
     initialize();
@@ -87,12 +88,6 @@ function App() {
   }, [isRunning]);
 
   const startBlocker = async () => {
-    const preIsRunning = await GetDaemonRunningStatus();
-    if (preIsRunning) {
-      console.log("Program is already running");
-      return;
-    }
-
     let calculatedEndTime =
       (blocktime.days == "" ? 0 : blocktime.days * 24 * 60 * 60) +
       (blocktime.hours == "" ? 0 : blocktime.hours * 60 * 60) +
@@ -100,13 +95,13 @@ function App() {
       (blocktime.seconds == "" ? 0 : blocktime.seconds);
 
     const newEndTime = await StartBlocker(calculatedEndTime, blocklist);
-    setEndTime(newEndTime);
 
-    const daemonStatus = await GetDaemonRunningStatus();
-    console.log(newEndTime, daemonStatus);
-    if (daemonStatus) {
-      setIsRunning(daemonStatus);
+    if (newEndTime == 0) {
+      return;
     }
+
+    setEndTime(newEndTime);
+    setIsRunning(true);
   };
 
   const mainLayoutStyle = {

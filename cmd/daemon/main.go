@@ -2,37 +2,49 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/mebn/betterBlockedThanSorry/internal/blocker"
 	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
+	"github.com/mebn/betterBlockedThanSorry/internal/initsystem"
 )
 
 func main() {
+	file, _ := os.OpenFile("/tmp/bbts.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+
+	file.WriteString("deamon starting\n")
+
 	// get data from database
+	// problem: this is located at /var/root/.bbtsDEV/db/db
 	db, err := database.NewDB(env.DBPath)
 	if err != nil {
-		fmt.Printf("[ERR] Failed to load the database: %s", err)
+		file.WriteString(fmt.Sprintf("[ERR] Failed to load the database: %s\n", err))
 		return
 	}
 	defer db.CloseDB()
 
+	// sleep so we have time to write and then read endtime
+	time.Sleep(1 * time.Second)
+
 	endtime, err := db.GetEndtime()
 	if err != nil {
-		fmt.Printf("[ERR] Failed to get endtime: %s", err)
+		file.WriteString(fmt.Sprintf("[ERR] Failed to get endtime: %s\n", err))
 		return
 	}
 
 	blocklist, err := db.GetBlocklist()
 	if err != nil {
-		fmt.Printf("[ERR] Failed to get blocklist: %s", err)
+		file.WriteString(fmt.Sprintf("[ERR] Failed to get blocklist: %s\n", err))
 		return
 	}
 
 	// prepare /etc/hosts file
 	etcHosts := blocker.NewEtcHosts(env.EtcHostsPath, blocklist)
 	etcHosts.AddBlock()
+
+	file.WriteString(fmt.Sprintf("[INFO] DB: %s, endtime: %d, blocklist: %v, etc: %s\n", env.DBPath, endtime, blocklist, env.EtcHostsPath))
 
 	// Timer for the overall duration
 	duration := time.Until(time.Unix(endtime, 0))
@@ -47,6 +59,12 @@ func main() {
 		select {
 		case <-durationTimer.C:
 			etcHosts.RemoveBlock()
+			// unload and remove?
+			daemon := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
+			err = daemon.Stop()
+			if err != nil {
+				file.WriteString(fmt.Sprintf("[ERR] stopping daemon failed. err: %s\n", err))
+			}
 			return
 		case <-ticker.C:
 			// TODO: handle new urls addad after start

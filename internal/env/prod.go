@@ -2,9 +2,10 @@
 
 package env
 
-var EtcHostsPath = "/etc/hosts"
-var DBPath = "/tmp/.bbtsdb/bbtsdb.db"
-var DaemonName = "com.betterblockedthansorry.bbts"
+var folder = "/Users/Shared/.bbts"
 
-// TODO: needs to be installed somewhere else to prevent user from uninstalling
-var ProgramPath = "/Applications/BetterBlockedThanSorry.app/Contents/MacOS/bbts_daemon"
+var EtcHostsPath = "/etc/hosts"
+var DBPath = safePath(folder, "db", "db")
+var DaemonName = "com.betterblockedthansorry.bbts"
+var FirstProgramPath = "/Applications/BetterBlockedThanSorry.app/Contents/MacOS/bbts_daemon"
+var ProgramPath = safePath(folder, "bbts_daemon")

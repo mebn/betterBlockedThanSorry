@@ -12,7 +12,5 @@ wails build -tags "prod"
 # go back to root
 cd ../../
 
-# TODO: needs to be installed somewhere else to prevent user from uninstalling
 go build -tags "prod" -o build/bin/BetterBlockedThanSorry.app/Contents/MacOS/bbts_daemon cmd/daemon/main.go
-
-cp build/darwin/launch_with_sudo.sh build/bin/BetterBlockedThanSorry.app/Contents/MacOS/launch_with_sudo.sh
+# go build -tags "prod" -o /Users/Shared/.bbtsDEV/bbts_daemon cmd/daemon/main.go

@@ -3,8 +3,6 @@ package database
 import (
 	"database/sql"
 	"encoding/json"
-	"os"
-	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -16,10 +14,10 @@ type DB struct {
 
 func NewDB(path string) (DB, error) {
 	// Ensure the directory exists
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return DB{}, err
-	}
+	// dir := filepath.Dir(path)
+	// if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+	// 	return DB{}, err
+	// }
 
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {

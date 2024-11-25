@@ -17,12 +17,7 @@ type App struct {
 }
 
 func NewApp() *App {
-	// TODO: check if daemon is already running?
-
-	daemon, err := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
-	if err != nil {
-		panic(fmt.Sprintf("ERROR: %s", err))
-	}
+	daemon := initsystem.NewDaemon(env.DaemonName, env.ProgramPath)
 
 	db, err := database.NewDB(env.DBPath)
 	if err != nil {
@@ -53,15 +48,14 @@ func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
 		return 0
 	}
 
-	isRunning := a.daemon.IsRunning()
-	if isRunning {
+	endtime, err := a.db.GetEndtime()
+	if err != nil {
 		return 0
 	}
 
-	endtime := time.Now().Add(time.Second * time.Duration(blocktime)).Unix()
+	currentTime := time.Now().Unix()
 
-	err := a.db.SetEndtime(endtime)
-	if err != nil {
+	if endtime >= currentTime {
 		return 0
 	}
 
@@ -70,17 +64,18 @@ func (a *App) StartBlocker(blocktime int, blocklist []string) int64 {
 		return 0
 	}
 
+	endtime = time.Now().Add(time.Second * time.Duration(blocktime)).Unix()
+
+	err = a.db.SetEndtime(endtime)
+	if err != nil {
+		return 0
+	}
+
 	return endtime
 }
 
-func (a *App) GetDaemonRunningStatus() bool {
-	isRunning := a.daemon.IsRunning()
-
-	if !isRunning {
-		_ = a.daemon.Stop()
-	}
-
-	return isRunning
+func (a *App) GetCurrentTime() int64 {
+	return time.Now().Unix()
 }
 
 // endtime stuff

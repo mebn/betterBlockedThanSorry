@@ -6,8 +6,8 @@ export function GetBlocklistDB() {
   return window['go']['main']['App']['GetBlocklistDB']();
 }
 
-export function GetDaemonRunningStatus() {
-  return window['go']['main']['App']['GetDaemonRunningStatus']();
+export function GetCurrentTime() {
+  return window['go']['main']['App']['GetCurrentTime']();
 }
 
 export function GetEndtimeDB() {

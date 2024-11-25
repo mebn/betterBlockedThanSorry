@@ -2,11 +2,10 @@
 
 package env
 
-import (
-	"fmt"
-)
+var folder = "/Users/Shared/.bbtsDEV"
 
 var EtcHostsPath = "/etc/hosts"
-var DBPath = "/tmp/bbtsdb/bbtsdb.db"
-var DaemonName = "com.betterblockedthansorry.bbts"
-var ProgramPath = fmt.Sprintf("%s/../../build/bin/bbts_daemon", getCurrentFilePath())
+var DBPath = safePath(folder, "db", "db")
+var DaemonName = "com.betterblockedthansorry.bbtsDEV"
+var FirstProgramPath = safePath(currentDir(), "../", "../", "build", "bin", "bbts_daemonDEV")
+var ProgramPath = safePath(folder, "bbts_daemonDEV")

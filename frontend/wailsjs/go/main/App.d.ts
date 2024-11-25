@@ -3,7 +3,7 @@
 
 export function GetBlocklistDB():Promise<Array<string>>;
 
-export function GetDaemonRunningStatus():Promise<boolean>;
+export function GetCurrentTime():Promise<number>;
 
 export function GetEndtimeDB():Promise<number>;
 
