@@ -57,16 +57,21 @@ func main() {
 
 	for {
 		select {
+		// if computer is asleep, this won't get caught
 		case <-durationTimer.C:
 			etcHosts.RemoveBlock()
-			// unload and remove?
-			daemon := daemon.NewDaemon(env.DaemonName, env.ProgramPath)
-			err = daemon.Stop()
-			if err != nil {
-				file.WriteString(fmt.Sprintf("[ERR] stopping daemon failed. err: %s\n", err))
+			err := stop(&etcHosts, file)
+			if err == nil {
+				return
 			}
-			return
 		case <-ticker.C:
+			currentTime := time.Now().Unix()
+			if currentTime >= endtime {
+				err := stop(&etcHosts, file)
+				if err == nil {
+					return
+				}
+			}
 			// TODO: handle new urls addad after start
 			if etcHosts.IsTamperedWith() {
 				etcHosts.RemoveBlock()
@@ -74,4 +79,14 @@ func main() {
 			}
 		}
 	}
+}
+
+func stop(etcHosts *blocker.EtcHosts, file *os.File) error {
+	etcHosts.RemoveBlock()
+	daemon := daemon.NewDaemon(env.DaemonName, env.ProgramPath)
+	err := daemon.Stop()
+	if err != nil {
+		file.WriteString(fmt.Sprintf("[ERR] stopping daemon failed. err: %s\n", err))
+	}
+	return nil
 }
