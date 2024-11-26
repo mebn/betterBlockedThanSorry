@@ -11,10 +11,15 @@ import (
 )
 
 func main() {
+	// check version and upgrade if needed
+
+	// move daemon to shared folder to make it
+	// harder for user to uninstall application
 	err := env.MoveProgram()
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	// Create an instance of the app structure
 	app := NewApp()
 

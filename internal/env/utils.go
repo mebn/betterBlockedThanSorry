@@ -17,11 +17,17 @@ func Home() string {
 	return currentUser.HomeDir
 }
 
-func safePath(args ...string) string {
-	fullPath := filepath.Join(args...) // dir, dir, filename
-	dir := filepath.Dir(fullPath)
-	os.MkdirAll(dir, 0755)
-	return fullPath
+func SafePath(args ...string) string {
+	path := filepath.Join(args...)
+	_ = os.MkdirAll(path, 0755)
+	return path
+}
+
+func SafeFile(args ...string) string {
+	path := filepath.Join(args...) // dir, dir, filename
+	dir := filepath.Dir(path)
+	_ = SafePath(dir)
+	return path
 }
 
 func MoveProgram() error {

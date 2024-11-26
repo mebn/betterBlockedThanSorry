@@ -1,10 +1,15 @@
 package env
 
 // import (
-// 	"os"
-// 	"path/filepath"
 // 	"testing"
 // )
+
+// func TestSafePath(t *testing.T) {
+// 	path := SafePath(folder, "testing", "folder")
+// 	println(path)
+
+// 	t.Fatal()
+// }
 
 // func TestJoin(t *testing.T) {
 // 	fullPath := filepath.Join("a", "path", "to", "a", "file")

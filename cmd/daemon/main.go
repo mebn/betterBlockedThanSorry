@@ -59,7 +59,6 @@ func main() {
 		select {
 		// if computer is asleep, this won't get caught
 		case <-durationTimer.C:
-			etcHosts.RemoveBlock()
 			err := stop(&etcHosts, file)
 			if err == nil {
 				return
