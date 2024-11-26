@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
-	"strings"
+
+	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
+	"github.com/mebn/betterBlockedThanSorry/internal/env"
 )
 
 func createConfigFile() string {
@@ -29,18 +30,26 @@ func createConfigFile() string {
 }
 
 func main() {
-	fileContent := createConfigFile()
+	var err error
 
-	formattedFileContent := strings.ReplaceAll(fileContent, `"`, `\"`)
-
-	script := fmt.Sprintf(
-		`do shell script "echo '%s' > %s" with administrator privileges`,
-		formattedFileContent, "/tmp/somefile")
-
-	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
+	// check version and upgrade if needed
+	updateAgent := daemon.NewAgent(env.UpdaterAgentName, env.UpdateProgramPath)
+	err = updateAgent.Start()
 	if err != nil {
-		fmt.Printf("error in Start(). out: %s, err: %s\n", out, err)
+		fmt.Println("Some error. err:", err)
 	}
+	// fileContent := createConfigFile()
+
+	// formattedFileContent := strings.ReplaceAll(fileContent, `"`, `\"`)
+
+	// script := fmt.Sprintf(
+	// 	`do shell script "echo '%s' > %s" with administrator privileges`,
+	// 	formattedFileContent, "/tmp/somefile")
+
+	// out, err := exec.Command("osascript", "-e", script).CombinedOutput()
+	// if err != nil {
+	// 	fmt.Printf("error in Start(). out: %s, err: %s\n", out, err)
+	// }
 
 	// currentUser, err := user.Current()
 	// if err != nil {

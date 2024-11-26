@@ -2,11 +2,19 @@
 
 package env
 
-var folder = "/Users/Shared/.bbtsDEV"
+var BaseFolder = "/Users/Shared/.bbtsDEV"
 
 var EtcHostsPath = "/etc/hosts"
-var DBPath = SafeFile(folder, "db", "db")
+var DBPath = SafeFile(BaseFolder, "db", "db")
+var DownloadPath = SafePath(BaseFolder, "download")
+var BinaryPath = "/Applications/BetterBlockedThanSorry.app"
+
+// blocker daemon
 var DaemonName = "com.betterblockedthansorry.bbtsDEV"
 var FirstProgramPath = SafeFile(currentDir(), "../", "../", "build", "bin", "bbts_daemonDEV")
-var ProgramPath = SafeFile(folder, "bbts_daemonDEV")
-var DownloadPath = SafePath(folder, "download")
+var ProgramPath = SafeFile(BaseFolder, "bbts_daemonDEV")
+
+// updater agent
+var UpdaterAgentName = "com.betterblockedthansorry.bbtsUpdaterDEV"
+var UpdateProgramPath = SafeFile(currentDir(), "../", "../", "build", "bin", "bbts_updaterDEV")
+var SkipUpdate = true

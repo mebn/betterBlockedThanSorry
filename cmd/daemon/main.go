@@ -12,16 +12,15 @@ import (
 )
 
 func main() {
-	file, _ := os.OpenFile("/tmp/bbts.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	file, _ := os.OpenFile("/tmp/bbtsblocker.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 
 	file.WriteString("deamon starting\n")
 
 	// get data from database
-	// problem: this is located at /var/root/.bbtsDEV/db/db
 	db, err := database.NewDB(env.DBPath)
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to load the database: %s\n", err))
-		return
+		stop(file)
 	}
 	defer db.CloseDB()
 
@@ -31,16 +30,15 @@ func main() {
 	endtime, err := db.GetEndtime()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to get endtime: %s\n", err))
-		return
+		stop(file)
 	}
 
 	blocklist, err := db.GetBlocklist()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to get blocklist: %s\n", err))
-		return
+		stop(file)
 	}
 
-	// prepare /etc/hosts file
 	etcHosts := blocker.NewEtcHosts(env.EtcHostsPath, blocklist)
 	etcHosts.AddBlock()
 
@@ -59,17 +57,13 @@ func main() {
 		select {
 		// if computer is asleep, this won't get caught
 		case <-durationTimer.C:
-			err := stop(&etcHosts, file)
-			if err == nil {
-				return
-			}
+			etcHosts.RemoveBlock()
+			stop(file)
 		case <-ticker.C:
 			currentTime := time.Now().Unix()
 			if currentTime >= endtime {
-				err := stop(&etcHosts, file)
-				if err == nil {
-					return
-				}
+				etcHosts.RemoveBlock()
+				stop(file)
 			}
 			// TODO: handle new urls addad after start
 			if etcHosts.IsTamperedWith() {
@@ -80,12 +74,10 @@ func main() {
 	}
 }
 
-func stop(etcHosts *blocker.EtcHosts, file *os.File) error {
-	etcHosts.RemoveBlock()
+func stop(file *os.File) {
 	daemon := daemon.NewDaemon(env.DaemonName, env.ProgramPath)
 	err := daemon.Stop()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] stopping daemon failed. err: %s\n", err))
 	}
-	return nil
 }

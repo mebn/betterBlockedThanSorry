@@ -8,6 +8,9 @@ import (
 	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
 	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
+	"github.com/mebn/betterBlockedThanSorry/internal/updater"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type App struct {
@@ -34,9 +37,48 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// move daemon to shared folder to make it
+	// harder for user to uninstall application
+	err := env.MoveProgram()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	endtime, _ := a.db.GetEndtime()
+	currentTime := time.Now().Unix()
+	if currentTime > endtime {
+		updater, err := updater.NewUpdater()
+		if err != nil {
+			fmt.Println("creating updater failed:", err)
+			return
+		}
+
+		wailsConfig, err := ParseWailsConfig()
+		if err != nil {
+			fmt.Println("json parsing failed:", err)
+			return
+		}
+
+		// check version and update if needed (only in prod)
+		if env.SkipUpdate {
+			return
+		}
+
+		if !updater.UpToDate(wailsConfig.Info.ProductVersion) {
+			updateAgent := daemon.NewAgent(env.UpdaterAgentName, env.UpdateProgramPath)
+			err = updateAgent.Start()
+			if err != nil {
+				fmt.Println("failed to start update agent: ", err)
+				return
+			}
+			runtime.Quit(ctx)
+		}
+	}
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	fmt.Println("Shuting down")
 	a.ctx = ctx
 	a.db.CloseDB()
 }

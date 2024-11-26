@@ -26,10 +26,8 @@ func newLaunchdDaemon(nameOfDaemon, program string) *Launchd {
 	return &Launchd{
 		programToExecute:    program,
 		nameOfDaemonOrAgent: nameOfDaemon,
-		pathToDaemonOrAgent: strings.ReplaceAll(
-			fmt.Sprintf("/Library/LaunchDaemons/%s.plist", nameOfDaemon),
-			`"`, `\"`),
-		daemonOrAgent: daemon,
+		pathToDaemonOrAgent: fmt.Sprintf("/Library/LaunchDaemons/%s.plist", nameOfDaemon),
+		daemonOrAgent:       daemon,
 	}
 }
 
@@ -37,33 +35,46 @@ func newLaunchdAgent(nameOfAgent, program string) *Launchd {
 	return &Launchd{
 		programToExecute:    program,
 		nameOfDaemonOrAgent: nameOfAgent,
-		pathToDaemonOrAgent: strings.ReplaceAll(
-			fmt.Sprintf("%s/Library/LaunchAgents/%s.plist", env.Home(), nameOfAgent),
-			`"`, `\"`),
-		daemonOrAgent: agent,
+		pathToDaemonOrAgent: fmt.Sprintf("%s/Library/LaunchAgents/%s.plist", env.Home(), nameOfAgent),
+		daemonOrAgent:       agent,
 	}
 }
 
 func (l *Launchd) Start(args ...string) error {
-	fileContent, err := l.createConfigFile(args...)
+	var fileContent string
+	var err error
+
+	if l.daemonOrAgent == daemon {
+		fileContent, err = l.createConfigFile(true, true, args...)
+	} else {
+		fileContent, err = l.createConfigFile(false, true, args...)
+	}
+
 	if err != nil {
 		return err
 	}
 
 	formattedFileContent := strings.ReplaceAll(fileContent, `"`, `\"`)
 
-	// agent
-	script := fmt.Sprintf(
-		`echo '%s' > \"%s\" && launchctl load -w \"%s\"`,
-		formattedFileContent, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
-	cmd := exec.Command("bash", "-c", script)
+	var script string
+	var cmd *exec.Cmd
 
-	// daemon
 	if l.daemonOrAgent == daemon {
+		// daemon
+		script = fmt.Sprintf(
+			`echo '%s' > \"%s\" && launchctl load -w \"%s\"`,
+			formattedFileContent, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+
 		script = fmt.Sprintf(
 			`do shell script "%s" with administrator privileges`,
 			script)
 		cmd = exec.Command("osascript", "-e", script)
+	} else {
+		// agent
+		script = fmt.Sprintf(
+			`echo '%s' > '%s' && launchctl load -w '%s'`,
+			formattedFileContent, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+		cmd = exec.Command("bash", "-c", script)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -76,16 +87,26 @@ func (l *Launchd) Start(args ...string) error {
 }
 
 func (l *Launchd) Stop() error {
-	// agent
-	script := fmt.Sprintf(`launchctl unload -w \"%s\" && rm -fr \"%s\"`, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
-	cmd := exec.Command("bash", "-c", script)
+	var script string
+	var cmd *exec.Cmd
 
-	// daemon
 	if l.daemonOrAgent == daemon {
+		// daemon
+		script = fmt.Sprintf(
+			`launchctl unload -w \"%s\" && rm -fr \"%s\"`,
+			l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+
 		script = fmt.Sprintf(
 			`do shell script "%s" with administrator privileges`,
 			script)
 		cmd = exec.Command("osascript", "-e", script)
+	} else {
+		// agent
+		// TODO: this does not remove
+		script = fmt.Sprintf(
+			`launchctl unload -w '%s' && rm -fr '%s'`,
+			l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+		cmd = exec.Command("bash", "-c", script)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -97,7 +118,19 @@ func (l *Launchd) Stop() error {
 	return nil
 }
 
-func (l *Launchd) createConfigFile(args ...string) (string, error) {
+func (l *Launchd) createConfigFile(keepAlive, runAtLoad bool, args ...string) (string, error) {
+	// keep alive
+	keepAliveString := "<false/>"
+	if keepAlive {
+		keepAliveString = "<true/>"
+	}
+
+	// run at load
+	runAtLoadString := "<false/>"
+	if runAtLoad {
+		runAtLoadString = "<true/>"
+	}
+
 	// handle args
 	formattedArgs := ""
 	for _, arg := range args {
@@ -115,12 +148,12 @@ func (l *Launchd) createConfigFile(args ...string) (string, error) {
 			<string>%s</string>%s
 		</array>
 		<key>KeepAlive</key>
-		<true/>
+		%s
 		<key>RunAtLoad</key>
-		<true/>
+		%s
 	</dict>
 </plist>
-`, l.nameOfDaemonOrAgent, l.programToExecute, formattedArgs)
+`, l.nameOfDaemonOrAgent, l.programToExecute, formattedArgs, keepAliveString, runAtLoadString)
 
 	return fileContent, nil
 }

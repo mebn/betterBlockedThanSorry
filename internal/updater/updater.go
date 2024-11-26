@@ -17,20 +17,16 @@ import (
 // TODO: create a new key
 const apiKey = "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"
 
-type GitHubAsset struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
-}
-
-type GitHubRelease struct {
-	TagName string        `json:"tag_name"`
-	Name    string        `json:"name"`
-	Body    string        `json:"body"`
-	Assets  []GitHubAsset `json:"assets"`
+type gitHubRelease struct {
+	TagName string `json:"tag_name"`
+	Assets  []struct {
+		Name string `json:"name"`
+		Url  string `json:"url"`
+	} `json:"assets"`
 }
 
 type Updater struct {
-	release GitHubRelease
+	release gitHubRelease
 }
 
 func NewUpdater() (Updater, error) {
@@ -54,7 +50,7 @@ func NewUpdater() (Updater, error) {
 		return Updater{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var release GitHubRelease
+	var release gitHubRelease
 	err = json.NewDecoder(resp.Body).Decode(&release)
 	if err != nil {
 		return Updater{}, fmt.Errorf("failed to parse JSON: %v", err)
@@ -65,15 +61,47 @@ func NewUpdater() (Updater, error) {
 	}, nil
 }
 
-func (u *Updater) CheckUpToDate(currentVersion string) bool {
+func (u *Updater) UpToDate(currentVersion string) bool {
 	return u.release.TagName == currentVersion
 }
 
 // Download the latest version to a temporary/shared folder
-func (u *Updater) DownloadLatest() error {
-	// get link
-	downloadlink := ""
-	filename := ""
+func (u *Updater) DownloadLatestBinary() (string, error) {
+	downloadlink, assetName, err := u.getDownloadLink()
+	if err != nil {
+		return "", err
+	}
+
+	zipPath, err := u.downloadZIP(downloadlink, assetName)
+	if err != nil {
+		return "", nil
+	}
+
+	if strings.HasSuffix(assetName, ".zip") {
+		err := unzip(zipPath, env.DownloadPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to unzip file: %v", err)
+		}
+	}
+
+	// assume file inside zip is the same, but with .zip removed
+	binaryName := strings.ReplaceAll(assetName, ".zip", "")
+
+	return binaryName, nil
+}
+
+func (u *Updater) ReplaceProgram(oldPath, newPath string) error {
+	err := os.Rename(oldPath, newPath)
+	if err != nil {
+		return fmt.Errorf("moving the file failed. err: %s", err)
+	}
+	return nil
+}
+
+// helpers
+
+func (u *Updater) getDownloadLink() (string, string, error) {
+	downloadlink, assetName := "", ""
 
 	for _, asset := range u.release.Assets {
 		macos := strings.Contains(asset.Name, ".app")
@@ -81,21 +109,24 @@ func (u *Updater) DownloadLatest() error {
 
 		if macos || win {
 			downloadlink = asset.Url
-			filename = asset.Name
+			assetName = asset.Name
 			break
 		}
 	}
 
-	if downloadlink == "" || filename == "" {
-		return fmt.Errorf("no download link found")
+	if downloadlink == "" || assetName == "" {
+		return "", "", fmt.Errorf("no download link found")
 	}
 
-	// download zip
+	return downloadlink, assetName, nil
+}
+
+func (u *Updater) downloadZIP(downloadlink, assetName string) (string, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	req, err := http.NewRequest("GET", downloadlink, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %v", err)
+		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
 	req.Header.Set("Accept", "application/octet-stream")
@@ -103,37 +134,28 @@ func (u *Updater) DownloadLatest() error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to make request: %v", err)
+		return "", fmt.Errorf("failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download file: status code %d", resp.StatusCode)
+		return "", fmt.Errorf("failed to download file: status code %d", resp.StatusCode)
 	}
 
-	filePath := env.SafeFile(env.DownloadPath, filename)
-
-	println(filePath)
+	filePath := env.SafeFile(env.DownloadPath, assetName)
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
+		return "", fmt.Errorf("failed to create file: %v", err)
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to save file: %v", err)
+		return "", fmt.Errorf("failed to save file: %v", err)
 	}
 
-	// unzip
-	if strings.HasSuffix(filename, ".zip") {
-		if err := unzip(filePath, env.DownloadPath); err != nil {
-			return fmt.Errorf("failed to unzip file: %v", err)
-		}
-	}
-
-	return nil
+	return filePath, nil
 }
 
 func unzip(src, dest string) error {
@@ -180,11 +202,6 @@ func unzip(src, dest string) error {
 			}
 		}
 	}
-
-	return nil
-}
-
-func (u *Updater) ReplaceProgram() error {
 
 	return nil
 }
