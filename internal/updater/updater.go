@@ -7,7 +7,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -95,6 +97,38 @@ func (u *Updater) ReplaceProgram(oldPath, newPath string) error {
 	if err != nil {
 		return fmt.Errorf("moving the file failed. err: %s", err)
 	}
+	return nil
+}
+
+// TODO: should this be in updater?
+func (u *Updater) RelaunchProgram(path string) error {
+	if runtime.GOOS == "darwin" {
+		if !strings.HasSuffix(path, ".app") {
+			return fmt.Errorf("invalid macOS application path: %s", path)
+		}
+
+		cmd := exec.Command("open", path)
+
+		err := cmd.Start()
+		if err != nil {
+			return fmt.Errorf("failed to relaunch application: %w", err)
+		}
+
+		return nil
+	}
+
+	// windows
+	if !strings.HasSuffix(path, ".exe") {
+		return fmt.Errorf("invalid Windows executable path: %s", path)
+	}
+
+	cmd := exec.Command(path)
+
+	err := cmd.Start()
+	if err != nil {
+		return fmt.Errorf("failed to relaunch application: %w", err)
+	}
+
 	return nil
 }
 
