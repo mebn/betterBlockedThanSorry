@@ -65,6 +65,7 @@ func (a *App) startup(ctx context.Context) {
 			return
 		}
 
+		// TODO: move this to updaterAgent. pass current version somehow
 		if !updater.UpToDate(wailsConfig.Info.ProductVersion) {
 			updateAgent := daemon.NewAgent(env.UpdaterAgentName, env.UpdateProgramPath)
 			err = updateAgent.Start()

@@ -29,13 +29,13 @@ func main() {
 		stop(file)
 	}
 
-	err = updater.ReplaceProgram(binaryPath, env.BinaryPath)
+	err = appUpdater.ReplaceProgram(binaryPath, env.BinaryPath)
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to move the binary: %s\n", err))
 		stop(file)
 	}
 
-	err = updater.RelaunchProgram(env.BinaryPath)
+	err = appUpdater.RelaunchProgram(env.BinaryPath)
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to reopen the binary: %s\n", err))
 		stop(file)

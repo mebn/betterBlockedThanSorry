@@ -19,21 +19,23 @@ func TestUpToDate(t *testing.T) {
 		},
 	}
 
-	// not up to date
-	got = u.UpToDate("v1.0.1")
-	want = false
+	t.Run("not up to date", func(t *testing.T) {
+		got = u.UpToDate("v1.0.1")
+		want = false
 
-	if got != want {
-		t.Fatal("Should not be up to date", got, want)
-	}
+		if got != want {
+			t.Fatal("Should not be up to date", got, want)
+		}
+	})
 
-	// up to date
-	got = u.UpToDate("v1.0.0")
-	want = true
+	t.Run("up to date", func(t *testing.T) {
+		got = u.UpToDate("v1.0.0")
+		want = true
 
-	if got != want {
-		t.Fatal("Should be up to date", got, want)
-	}
+		if got != want {
+			t.Fatal("Should be up to date", got, want)
+		}
+	})
 }
 
 // TODO: mock instead of creating files
@@ -71,10 +73,6 @@ func TestReplaceProgram(t *testing.T) {
 	if err == nil {
 		t.Fatal("Old file still exist:", err)
 	}
-
-	// cleanup
-	os.RemoveAll(oldPath)
-	os.RemoveAll(newPath)
 }
 
 // TODO
