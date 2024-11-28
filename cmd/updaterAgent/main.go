@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
+	"github.com/mebn/betterBlockedThanSorry/internal/service"
 	"github.com/mebn/betterBlockedThanSorry/internal/updater"
 )
 
@@ -45,7 +45,7 @@ func main() {
 }
 
 func stop(file *os.File) {
-	agent := daemon.NewAgent(env.UpdaterAgentName, env.UpdateProgramPath)
+	agent := service.NewBackgroundService(env.UpdaterAgentName, env.UpdateProgramPath, service.Agent)
 	err := agent.Stop()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Stopping agent failed. err: %s\n", err))

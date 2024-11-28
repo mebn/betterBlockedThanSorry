@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
 	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
+	"github.com/mebn/betterBlockedThanSorry/internal/service"
 	"github.com/mebn/betterBlockedThanSorry/internal/updater"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -15,12 +15,12 @@ import (
 
 type App struct {
 	ctx    context.Context
-	daemon daemon.DaemonInterface
+	daemon service.ServiceInterface
 	db     database.DB
 }
 
 func NewApp() *App {
-	daemon := daemon.NewDaemon(env.DaemonName, env.ProgramPath)
+	daemon := service.NewBackgroundService(env.DaemonName, env.ProgramPath, service.Daemon)
 
 	db, err := database.NewDB(env.DBPath)
 	if err != nil {
@@ -67,7 +67,7 @@ func (a *App) startup(ctx context.Context) {
 
 		// TODO: move this to updaterAgent. pass current version somehow
 		if !updater.UpToDate(wailsConfig.Info.ProductVersion) {
-			updateAgent := daemon.NewAgent(env.UpdaterAgentName, env.UpdateProgramPath)
+			updateAgent := service.NewBackgroundService(env.UpdaterAgentName, env.UpdateProgramPath, service.Agent)
 			err = updateAgent.Start()
 			if err != nil {
 				fmt.Println("failed to start update agent: ", err)

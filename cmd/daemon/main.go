@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/mebn/betterBlockedThanSorry/internal/blocker"
-	"github.com/mebn/betterBlockedThanSorry/internal/daemon"
 	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
+	"github.com/mebn/betterBlockedThanSorry/internal/service"
 )
 
 func main() {
@@ -75,7 +75,7 @@ func main() {
 }
 
 func stop(file *os.File) {
-	daemon := daemon.NewDaemon(env.DaemonName, env.ProgramPath)
+	daemon := service.NewBackgroundService(env.DaemonName, env.ProgramPath, service.Daemon)
 	err := daemon.Stop()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] stopping daemon failed. err: %s\n", err))

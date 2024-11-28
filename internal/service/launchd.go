@@ -1,4 +1,4 @@
-package daemon
+package service
 
 import (
 	"fmt"
@@ -8,35 +8,34 @@ import (
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
 )
 
-type daemonOrAgentType int
+type DaemonOrAgentType int
 
 const (
-	daemon daemonOrAgentType = iota
-	agent
+	Daemon DaemonOrAgentType = iota
+	Agent
 )
 
 type Launchd struct {
 	programToExecute    string
 	nameOfDaemonOrAgent string
 	pathToDaemonOrAgent string
-	daemonOrAgent       daemonOrAgentType
+	daemonOrAgent       DaemonOrAgentType
 }
 
-func newLaunchdDaemon(nameOfDaemon, program string) *Launchd {
-	return &Launchd{
-		programToExecute:    program,
-		nameOfDaemonOrAgent: nameOfDaemon,
-		pathToDaemonOrAgent: fmt.Sprintf("/Library/LaunchDaemons/%s.plist", nameOfDaemon),
-		daemonOrAgent:       daemon,
+func newLaunchd(nameOfDaemonOrAgent, programToExecute string, daemonOrAgent DaemonOrAgentType) *Launchd {
+	var pathToDaemonOrAgent string
+
+	if daemonOrAgent == Daemon {
+		pathToDaemonOrAgent = fmt.Sprintf("/Library/LaunchDaemons/%s.plist", nameOfDaemonOrAgent)
+	} else {
+		pathToDaemonOrAgent = fmt.Sprintf("%s/Library/LaunchAgents/%s.plist", env.Home(), nameOfDaemonOrAgent)
 	}
-}
 
-func newLaunchdAgent(nameOfAgent, program string) *Launchd {
 	return &Launchd{
-		programToExecute:    program,
-		nameOfDaemonOrAgent: nameOfAgent,
-		pathToDaemonOrAgent: fmt.Sprintf("%s/Library/LaunchAgents/%s.plist", env.Home(), nameOfAgent),
-		daemonOrAgent:       agent,
+		programToExecute,
+		nameOfDaemonOrAgent,
+		pathToDaemonOrAgent,
+		daemonOrAgent,
 	}
 }
 
@@ -44,7 +43,7 @@ func (l *Launchd) Start(args ...string) error {
 	var fileContent string
 	var err error
 
-	if l.daemonOrAgent == daemon {
+	if l.daemonOrAgent == Daemon {
 		fileContent, err = l.createConfigFile(true, true, args...)
 	} else {
 		fileContent, err = l.createConfigFile(false, true, args...)
@@ -59,7 +58,7 @@ func (l *Launchd) Start(args ...string) error {
 	var script string
 	var cmd *exec.Cmd
 
-	if l.daemonOrAgent == daemon {
+	if l.daemonOrAgent == Daemon {
 		// daemon
 		script = fmt.Sprintf(
 			`echo '%s' > \"%s\" && launchctl load -w \"%s\"`,
@@ -90,7 +89,7 @@ func (l *Launchd) Stop() error {
 	var script string
 	var cmd *exec.Cmd
 
-	if l.daemonOrAgent == daemon {
+	if l.daemonOrAgent == Daemon {
 		// daemon
 		script = fmt.Sprintf(
 			`launchctl unload -w \"%s\" && rm -fr \"%s\"`,
