@@ -2,9 +2,21 @@ package blocker
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+func initFile(t *testing.T, path string, data ...string) {
+	file, err := os.Create(path) // truncate file
+	if err != nil {
+		t.Fatal("creating file failed")
+	}
+	if len(data) != 0 {
+		file.WriteString(data[0])
+	}
+	file.Close()
+}
 
 func TestGenerateBlocklist(t *testing.T) {
 	want := []string{
@@ -27,26 +39,24 @@ func TestGenerateBlocklist(t *testing.T) {
 	}
 }
 
-func TestAddAndDeleteBLock(t *testing.T) {
-	// setup
-	filename := "/tmp/bbtsanothertempfile346782"
-	file, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-	file.Truncate(0)
-	file.WriteString(`hello
-my
-name
-is`)
-	file.Close()
+func TestAddBlock(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test")
+	if err != nil {
+		t.Fatal("Failed to create temp dir:", err)
+	}
+	defer os.RemoveAll(tempDir)
+	path := filepath.Join(tempDir, "file")
 
-	blocklist := []string{"a.com", "www.b.com"}
-	etcHosts := NewEtcHosts(filename, blocklist)
+	t.Run("add block", func(t *testing.T) {
+		initFile(t, path)
 
-	// test add
-	etcHosts.AddBlock()
-	want := `hello
-my
-name
-is
+		etcHosts := NewEtcHosts(path, []string{"a.com", "www.b.com"})
+		etcHosts.AddBlock()
+
+		gotB, _ := os.ReadFile(path)
+		got := string(gotB)
+
+		want := `
 127.0.0.1 a.com
 127.0.0.1 www.a.com
 ::1 a.com
@@ -55,78 +65,106 @@ is
 127.0.0.1 www.www.b.com
 ::1 www.b.com
 ::1 www.www.b.com`
-	gotB, _ := os.ReadFile(filename)
-	got := string(gotB)
 
-	if want != got {
-		t.Fatal(want, got)
-	}
+		if want != got {
+			t.Fatal(want, got)
+		}
+	})
 
-	// test remove
-	etcHosts.RemoveBlock()
-	want = `hello
-my
-name
-is`
-	gotB, _ = os.ReadFile(filename)
-	got = string(gotB)
+	t.Run("should not override data", func(t *testing.T) {
+		initFile(t, path, `
+some
+data`)
 
-	if want != got {
-		t.Fatal(want, got)
-	}
+		etcHosts := NewEtcHosts(path, []string{"a.com", "www.b.com"})
+		etcHosts.AddBlock()
 
-	// cleanup
-	os.Remove(filename)
-}
+		gotB, _ := os.ReadFile(path)
+		got := string(gotB)
 
-func TestIsTamperedWith(t *testing.T) {
-	// setup
-	filename := "/tmp/bbtsanothertempfile1238246"
-	file, _ := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-	file.Truncate(0)
-	file.WriteString(`hello
-my
-name
-is`)
-	file.Close()
-
-	blocklist := []string{"a.com", "www.b.com"}
-	etcHosts := NewEtcHosts(filename, blocklist)
-
-	etcHosts.AddBlock()
-
-	// test no modifications
-	want := false
-	got := etcHosts.IsTamperedWith()
-
-	if want != got {
-		t.Fatal(want, got)
-	}
-
-	// test modification (a.com removed)
-	file, _ = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-	file.Truncate(0)
-	file.WriteString(`hello
-my
-name
-is
+		want := `
+some
+data
+127.0.0.1 a.com
 127.0.0.1 www.a.com
 ::1 a.com
 ::1 www.a.com
 127.0.0.1 www.b.com
 127.0.0.1 www.www.b.com
 ::1 www.b.com
-::1 www.www.b.com`)
+::1 www.www.b.com`
 
-	file.Close()
+		if want != got {
+			t.Fatal(want, got)
+		}
+	})
+}
 
-	want = true
-	got = etcHosts.IsTamperedWith()
-
-	if want != got {
-		t.Fatal(want, got)
+func TestDeleteBlock(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test")
+	if err != nil {
+		t.Fatal("Failed to create temp dir:", err)
 	}
+	defer os.RemoveAll(tempDir)
+	path := filepath.Join(tempDir, "file")
 
-	// cleanup
-	os.Remove(filename)
+	t.Run("remove a block", func(t *testing.T) {
+		initFile(t, path, `
+some
+data`)
+
+		etcHosts := NewEtcHosts(path, []string{"a.com", "www.b.com"})
+		etcHosts.AddBlock()
+		etcHosts.RemoveBlock()
+
+		gotB, _ := os.ReadFile(path)
+		got := string(gotB)
+
+		want := `
+some
+data`
+
+		if want != got {
+			t.Fatal(want, got)
+		}
+	})
+}
+
+func TestIsTamperedWith(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test")
+	if err != nil {
+		t.Fatal("Failed to create temp dir:", err)
+	}
+	defer os.RemoveAll(tempDir)
+	path := filepath.Join(tempDir, "file")
+
+	t.Run("no modifications", func(t *testing.T) {
+		initFile(t, path)
+
+		etcHosts := NewEtcHosts(path, []string{"a.com", "www.b.com"})
+		etcHosts.AddBlock()
+
+		got := etcHosts.IsTamperedWith()
+		want := false
+
+		if want != got {
+			t.Fatal(want, got)
+		}
+	})
+
+	t.Run("modifications", func(t *testing.T) {
+		initFile(t, path)
+
+		etcHosts := NewEtcHosts(path, []string{"a.com", "www.b.com"})
+		etcHosts.AddBlock()
+
+		initFile(t, path)
+
+		got := etcHosts.IsTamperedWith()
+		want := true
+
+		if want != got {
+			t.Fatal(want, got)
+		}
+	})
 }
