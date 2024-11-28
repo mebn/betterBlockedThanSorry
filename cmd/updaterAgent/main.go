@@ -17,13 +17,13 @@ func main() {
 
 	file.WriteString("[INFO] Agent started new.\n")
 
-	updater, err := updater.NewUpdater()
+	appUpdater, err := updater.NewUpdater()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to create Updater: %s\n", err))
 		stop(file)
 	}
 
-	binaryPath, err := updater.DownloadLatestBinary()
+	binaryPath, err := appUpdater.DownloadLatestBinary()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to download latest binary: %s\n", err))
 		stop(file)
@@ -35,7 +35,6 @@ func main() {
 		stop(file)
 	}
 
-	// relaunch the program
 	err = updater.RelaunchProgram(env.BinaryPath)
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to reopen the binary: %s\n", err))
