@@ -3,7 +3,10 @@
 package service
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestCreateConfigFile(t *testing.T) {
@@ -70,38 +73,30 @@ func TestCreateConfigFile(t *testing.T) {
 	})
 }
 
-// func TestStartAndIsRunningAndDelete(t *testing.T) {
-// 	// setup
-// 	launchd := newLaunchd("ignoremeiamjustasillylittletestthing2", "touch")
-// 	launchd.Stop()
-// 	os.Remove("/tmp/ignoremeiamjustasillylittletestthing2")
+func TestStartAndStop(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test")
+	if err != nil {
+		t.Fatal("failed to create temp dir")
+	}
+	defer os.RemoveAll(tempDir)
+	fileToCreate := filepath.Join(tempDir, "a")
 
-// 	// start
-// 	launchd.Start("/tmp/ignoremeiamjustasillylittletestthing2")
+	a := newLaunchd("com.betterblockedthan.sorry.test457", "touch", Agent)
 
-// 	// need to sleep here so daemon can create the touch file
-// 	time.Sleep(time.Second)
+	t.Run("touch a file (with args)", func(t *testing.T) {
+		a.Start(fileToCreate)
+		time.Sleep(500 * time.Millisecond)
+		a.Stop()
 
-// 	// does the file exist now? i.e. did the daemon work
-// 	_, err := os.ReadFile("/tmp/ignoremeiamjustasillylittletestthing2")
-// 	if err != nil {
-// 		t.Fatal("File was not created, daemon didn't run:", err)
-// 	}
+		_, err = os.Stat(fileToCreate)
+		if err != nil {
+			t.Fatal("failed to create file, start() failed")
+		}
 
-// 	// status
-// 	want := false
-// 	got := launchd.IsRunning()
-
-// 	if got != want {
-// 		t.Fatal(got, want)
-// 	}
-
-// 	// stop the daemon
-// 	err = launchd.Stop()
-// 	if err != nil {
-// 		t.Fatal("Stopping the daemon failed:", err)
-// 	}
-
-// 	// cleanup
-// 	os.Remove("/tmp/ignoremeiamjustasillylittletestthing2")
-// }
+		// is plist gone?
+		_, err = os.Stat(a.pathToDaemonOrAgent)
+		if err == nil {
+			t.Fatal("the plist file should be gone, but isn't")
+		}
+	})
+}

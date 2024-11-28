@@ -55,25 +55,11 @@ func (l *Launchd) Start(args ...string) error {
 
 	formattedFileContent := strings.ReplaceAll(fileContent, `"`, `\"`)
 
-	var script string
 	var cmd *exec.Cmd
-
 	if l.daemonOrAgent == Daemon {
-		// daemon
-		script = fmt.Sprintf(
-			`echo '%s' > \"%s\" && launchctl load -w \"%s\"`,
-			formattedFileContent, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
-
-		script = fmt.Sprintf(
-			`do shell script "%s" with administrator privileges`,
-			script)
-		cmd = exec.Command("osascript", "-e", script)
+		cmd = l.daemonStartCmd(formattedFileContent)
 	} else {
-		// agent
-		script = fmt.Sprintf(
-			`echo '%s' > '%s' && launchctl load -w '%s'`,
-			formattedFileContent, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
-		cmd = exec.Command("bash", "-c", script)
+		cmd = l.agentStartCmd(formattedFileContent)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -85,27 +71,33 @@ func (l *Launchd) Start(args ...string) error {
 	return nil
 }
 
+func (l *Launchd) daemonStartCmd(fileContent string) *exec.Cmd {
+	script := fmt.Sprintf(
+		`echo '%s' > \"%s\" && launchctl load -w \"%s\"`,
+		fileContent, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+
+	script = fmt.Sprintf(
+		`do shell script "%s" with administrator privileges`,
+		script)
+
+	return exec.Command("osascript", "-e", script)
+}
+
+func (l *Launchd) agentStartCmd(fileContent string) *exec.Cmd {
+	script := fmt.Sprintf(
+		`echo '%s' > '%s' && launchctl load -w '%s'`,
+		fileContent, l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+
+	return exec.Command("bash", "-c", script)
+}
+
 func (l *Launchd) Stop() error {
-	var script string
 	var cmd *exec.Cmd
 
 	if l.daemonOrAgent == Daemon {
-		// daemon
-		script = fmt.Sprintf(
-			`launchctl unload -w \"%s\" && rm -fr \"%s\"`,
-			l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
-
-		script = fmt.Sprintf(
-			`do shell script "%s" with administrator privileges`,
-			script)
-		cmd = exec.Command("osascript", "-e", script)
+		cmd = l.daemonStopCmd()
 	} else {
-		// agent
-		// TODO: this does not remove
-		script = fmt.Sprintf(
-			`launchctl unload -w '%s' && rm -fr '%s'`,
-			l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
-		cmd = exec.Command("bash", "-c", script)
+		cmd = l.agentStopCmd()
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -115,6 +107,26 @@ func (l *Launchd) Stop() error {
 	}
 
 	return nil
+}
+
+func (l *Launchd) daemonStopCmd() *exec.Cmd {
+	script := fmt.Sprintf(
+		`launchctl unload -w \"%s\" && rm -fr \"%s\"`,
+		l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+
+	script = fmt.Sprintf(
+		`do shell script "%s" with administrator privileges`,
+		script)
+
+	return exec.Command("osascript", "-e", script)
+}
+
+func (l *Launchd) agentStopCmd() *exec.Cmd {
+	// TODO: this does not remove
+	script := fmt.Sprintf(
+		`launchctl unload -w '%s' && rm -fr '%s'`,
+		l.pathToDaemonOrAgent, l.pathToDaemonOrAgent)
+	return exec.Command("bash", "-c", script)
 }
 
 func (l *Launchd) createConfigFile(keepAlive, runAtLoad bool, args ...string) (string, error) {
