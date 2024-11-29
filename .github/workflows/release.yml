@@ -9,6 +9,8 @@ jobs:
   build-and-release:
     name: Build and Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       # Checkout the repository
@@ -28,18 +30,11 @@ jobs:
           GOOS: darwin
           GOARCH: amd64 # amd=intel, arm=apple silicon
 
-      #   # Build for Windows
-      #   - name: Build for Windows
-      #     run: go build -o build/windows/myprogram.exe ./cmd/myprogram
-      #     env:
-      #       GOOS: windows
-      #       GOARCH: amd64
       # Compress binaries
       - name: Zip binaries
         run: |
           mkdir -p release
           zip -r release/BetterBlockedThanSorry.app.zip build/bin/BetterBlockedThanSorry.app
-        #   zip -r release/myprogram-windows.zip build/windows/myprogram.exe
 
       # Create GitHub Release
       - name: Create Release
@@ -61,11 +56,3 @@ jobs:
           asset_path: release/BetterBlockedThanSorry.app.zip
           asset_name: BetterBlockedThanSorry.app.zip
           asset_content_type: application/zip
-
-    #   - name: Upload Windows Binary
-    #     uses: actions/upload-release-asset@v1
-    #     with:
-    #       upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #       asset_path: release/myprogram-windows.zip
-    #       asset_name: myprogram-windows.zip
-    #       asset_content_type: application/zip
