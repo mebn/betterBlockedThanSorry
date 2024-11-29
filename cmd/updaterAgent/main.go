@@ -15,11 +15,21 @@ func main() {
 	file, _ := os.OpenFile(env.SafeFile(env.BaseFolder, "bbtsupdater.log"),
 		os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 
+	if len(os.Args) < 2 {
+		stop(file)
+	}
+
+	currentVersion := os.Args[1]
+
 	file.WriteString("[INFO] Agent started new.\n")
 
 	appUpdater, err := updater.NewUpdater()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Failed to create Updater: %s\n", err))
+		stop(file)
+	}
+
+	if appUpdater.UpToDate(currentVersion) {
 		stop(file)
 	}
 

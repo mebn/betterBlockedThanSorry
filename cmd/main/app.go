@@ -8,7 +8,6 @@ import (
 	"github.com/mebn/betterBlockedThanSorry/internal/database"
 	"github.com/mebn/betterBlockedThanSorry/internal/env"
 	"github.com/mebn/betterBlockedThanSorry/internal/service"
-	"github.com/mebn/betterBlockedThanSorry/internal/updater"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -45,36 +44,29 @@ func (a *App) startup(ctx context.Context) {
 		fmt.Println(err)
 	}
 
+	// check version and update if needed (only in prod)
+	if env.SkipUpdate {
+		return
+	}
+
 	endtime, _ := a.db.GetEndtime()
 	currentTime := time.Now().Unix()
-	if currentTime > endtime {
-		updater, err := updater.NewUpdater()
-		if err != nil {
-			fmt.Println("creating updater failed:", err)
-			return
-		}
 
+	if currentTime > endtime {
 		wailsConfig, err := ParseWailsConfig()
 		if err != nil {
 			fmt.Println("json parsing failed:", err)
 			return
 		}
 
-		// check version and update if needed (only in prod)
-		if env.SkipUpdate {
+		updateAgent := service.NewBackgroundService(env.UpdaterAgentName, env.UpdateProgramPath, service.Agent)
+		err = updateAgent.Start(wailsConfig.Info.ProductVersion)
+		if err != nil {
+			fmt.Println("failed to start update agent: ", err)
 			return
 		}
 
-		// TODO: move this to updaterAgent. pass current version somehow
-		if !updater.UpToDate(wailsConfig.Info.ProductVersion) {
-			updateAgent := service.NewBackgroundService(env.UpdaterAgentName, env.UpdateProgramPath, service.Agent)
-			err = updateAgent.Start()
-			if err != nil {
-				fmt.Println("failed to start update agent: ", err)
-				return
-			}
-			runtime.Quit(ctx)
-		}
+		runtime.Quit(ctx)
 	}
 }
 

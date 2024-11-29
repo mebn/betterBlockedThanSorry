@@ -6,7 +6,6 @@ var BaseFolder = "/Users/Shared/.bbtsDEV"
 
 var EtcHostsPath = "/etc/hosts"
 var DBPath = SafeFile(BaseFolder, "db", "db")
-var DownloadPath = SafePath(BaseFolder, "download")
 var BinaryPath = "/Applications/BetterBlockedThanSorry.app"
 
 // blocker daemon
@@ -17,4 +16,5 @@ var ProgramPath = SafeFile(BaseFolder, "bbts_daemonDEV")
 // updater agent
 var UpdaterAgentName = "com.betterblockedthansorry.bbtsUpdaterDEV"
 var UpdateProgramPath = SafeFile(currentDir(), "../", "../", "build", "bin", "bbts_updaterDEV")
+var DownloadPath = SafePath(BaseFolder, "download")
 var SkipUpdate = true
