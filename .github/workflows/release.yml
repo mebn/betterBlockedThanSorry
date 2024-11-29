@@ -17,17 +17,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Configure Git for Private Modules
-      - name: Configure Git for Private Modules
-        run: |
-          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/mebn/*
-
       # Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.21.3 # Replace with your required Go version
+
+      # Configure Git for Private Modules
+      - name: Configure Git for Private Modules
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/mebn/*
 
       # Install Wails
       - name: Install Wails
