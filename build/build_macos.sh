@@ -4,8 +4,15 @@
 BUILD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$BUILD_DIR"
 
-# navigate to where wailts.json is
-cd ../cmd/main
+# go to root
+cd ../
+
+# dist folder can't be empty
+mkdir -p frontend/dist
+touch frontend/dist/.tempfile
+
+# go to wails.json
+cd cmd/main
 
 wails build -tags "prod"
 

@@ -30,6 +30,5 @@ go.work.sum
 build/bin
 node_modules
 frontend/dist
-!frontend/dist/.gitkeep
 
 cmd/playground
