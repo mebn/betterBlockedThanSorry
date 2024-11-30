@@ -15,7 +15,8 @@ const apiKey = "github_pat_11AJOBUZY0Nr55KC04y6W1_FUUUEZlvSuopcODuJa5ncKHulbHnBX
 
 type Updater struct {
 	release gitHubRelease
-	osName  string
+	goOS    string
+	goARCH  string
 }
 
 func NewUpdater() (Updater, error) {
@@ -26,7 +27,8 @@ func NewUpdater() (Updater, error) {
 
 	return Updater{
 		release: release,
-		osName:  runtime.GOOS,
+		goOS:    runtime.GOOS,
+		goARCH:  runtime.GOARCH,
 	}, nil
 }
 
@@ -54,7 +56,9 @@ func (u *Updater) DownloadLatestBinary() (string, error) {
 	}
 
 	// assume file inside zip is the same, but with .zip removed
-	binaryName := strings.ReplaceAll(assetName, ".zip", "")
+	binaryName := assetName
+	binaryName = strings.ReplaceAll(binaryName, ".amd64.zip", "")
+	binaryName = strings.ReplaceAll(binaryName, ".arm64.zip", "")
 
 	return binaryName, nil
 }
@@ -68,7 +72,7 @@ func (u *Updater) ReplaceProgram(oldPath, newPath string) error {
 }
 
 func (u *Updater) RelaunchProgram(path string) error {
-	switch u.osName {
+	switch u.goOS {
 	case "darwin":
 		if !strings.HasSuffix(path, ".app") {
 			return fmt.Errorf("invalid macOS application path: %s", path)
@@ -98,7 +102,7 @@ func (u *Updater) RelaunchProgram(path string) error {
 		return nil
 	}
 
-	return fmt.Errorf("unsupported OS: %s", u.osName)
+	return fmt.Errorf("unsupported OS: %s", u.goOS)
 }
 
 // helpers
@@ -107,11 +111,15 @@ func (u *Updater) getDownloadLink() (string, string, error) {
 	downloadLink, assetName := "", ""
 
 	for _, asset := range u.release.Assets {
-		// TODO: use runtime.GOOS and runtime.GOARCH
-		macos := u.osName == "darwin" && strings.HasSuffix(asset.Name, ".app.zip")
-		win := u.osName == "windows" && strings.HasSuffix(asset.Name, ".exe.zip")
+		// macos
+		macosAmd64 := u.goOS == "darwin" && u.goARCH == "amd64" && strings.HasSuffix(asset.Name, ".app.amd64.zip")
+		macosArm64 := u.goOS == "darwin" && u.goARCH == "arm64" && strings.HasSuffix(asset.Name, ".app.arm64.zip")
 
-		if macos || win {
+		// windows
+		windowsAmd64 := u.goOS == "windows" && u.goARCH == "amd64" && strings.HasSuffix(asset.Name, ".exe.amd64.zip")
+		windowsArm64 := u.goOS == "windows" && u.goARCH == "arm64" && strings.HasSuffix(asset.Name, ".exe.arm64.zip")
+
+		if macosAmd64 || macosArm64 || windowsAmd64 || windowsArm64 {
 			downloadLink = asset.Url
 			assetName = asset.Name
 			break

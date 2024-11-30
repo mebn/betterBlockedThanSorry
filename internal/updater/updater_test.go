@@ -83,31 +83,38 @@ func TestGetDownloadLink(t *testing.T) {
 	u := Updater{
 		release: gitHubRelease{
 			Assets: []Asset{
-				{Name: "myprogram.app.zip", Url: "https://example.com/myprogram.app.zip"},
-				{Name: "myprogram.exe.zip", Url: "https://example.com/myprogram.exe.zip"},
+				{Name: "myprogram.app.amd64.zip", Url: "https://example.com/myprogram.app.amd64.zip"},
+				{Name: "myprogram.exe.arm64.zip", Url: "https://example.com/myprogram.exe.arm64.zip"},
 			},
 		},
 	}
 
-	u.osName = "darwin"
-	downloadLink, assetName, err := u.getDownloadLink()
-	if err != nil {
-		t.Fatal("getDownloadLink failed:", err)
-	}
+	t.Run("MacOS amd64", func(t *testing.T) {
+		u.goOS = "darwin"
+		u.goARCH = "amd64"
+		downloadLink, assetName, err := u.getDownloadLink()
+		if err != nil {
+			t.Fatal("getDownloadLink failed:", err)
+		}
 
-	if downloadLink != "https://example.com/myprogram.app.zip" || assetName != "myprogram.app.zip" {
-		t.Fatal("Got the wrong download link and name on darwin")
-	}
+		if downloadLink != "https://example.com/myprogram.app.amd64.zip" || assetName != "myprogram.app.amd64.zip" {
+			t.Fatal("Got the wrong download link and name on darwin")
+		}
+	})
 
-	u.osName = "windows"
-	downloadLink, assetName, err = u.getDownloadLink()
-	if err != nil {
-		t.Fatal("getDownloadLink failed:", err)
-	}
+	t.Run("Windows arm64", func(t *testing.T) {
+		u.goOS = "windows"
+		u.goARCH = "arm64"
+		downloadLink, assetName, err := u.getDownloadLink()
+		if err != nil {
+			t.Fatal("getDownloadLink failed:", err)
+		}
 
-	if downloadLink != "https://example.com/myprogram.exe.zip" || assetName != "myprogram.exe.zip" {
-		t.Fatal("Got the wrong download link and name on windows")
-	}
+		if downloadLink != "https://example.com/myprogram.exe.arm64.zip" || assetName != "myprogram.exe.arm64.zip" {
+			t.Fatal("Got the wrong download link and name on windows")
+		}
+	})
+
 }
 
 func TestDownloadLatestBinary(t *testing.T) {
