@@ -107,6 +107,7 @@ func (u *Updater) getDownloadLink() (string, string, error) {
 	downloadLink, assetName := "", ""
 
 	for _, asset := range u.release.Assets {
+		// TODO: use runtime.GOOS and runtime.GOARCH
 		macos := u.osName == "darwin" && strings.HasSuffix(asset.Name, ".app.zip")
 		win := u.osName == "windows" && strings.HasSuffix(asset.Name, ".exe.zip")
 

@@ -14,14 +14,14 @@ jobs:
 
     steps:
       # Checkout the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
+      #   - name: Checkout code
+      #     uses: actions/checkout@v4
 
       # Set up Go environment
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.21.3 # Replace with your required Go version
+      #   - name: Set up Go
+      #     uses: actions/setup-go@v4
+      #     with:
+      #       go-version: 1.21.3 # Replace with your required Go version
 
       # Configure Git for Private Modules
       - name: Configure Git for Private Modules
@@ -30,21 +30,22 @@ jobs:
           go env -w GOPRIVATE=github.com/mebn/*
 
       # Install Wails
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      #   - name: Install Wails
+      #     run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       # Build for macOS
-      - name: Build for macOS
-        run: ./build/build_macos.sh
-        env:
-          GOOS: darwin
-          GOARCH: amd64 # amd=intel, arm=apple silicon
+      #   - name: Build for macOS
+      #     run: ./build/build_macos.sh
+      #     env:
+      #       GOOS: darwin
+      #       GOARCH: amd64 # amd=intel, arm=apple silicon
 
       # Compress binaries
       - name: Zip binaries
         run: |
-          mkdir -p release
-          zip -r release/BetterBlockedThanSorry.app.zip build/bin/BetterBlockedThanSorry.app
+          mkdir -p release/folder
+          touch release/hello.txt
+          zip -r release/folder.zip release/folder
 
       # Create GitHub Release
       - name: Create Release
@@ -62,5 +63,6 @@ jobs:
       - name: Upload Release Assets
         uses: csexton/release-asset-action@v3
         with:
-          file: release/BetterBlockedThanSorry.app.zip
+          file: release/folder.zip
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-url: ${{ steps.create_release.outputs.upload_url }}
