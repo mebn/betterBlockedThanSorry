@@ -137,7 +137,5 @@ func (a *App) GetBlocklistDB() []string {
 
 func (a *App) SetBlocklistDB(blocklist []string) {
 	// TOOD: error handling
-	err := a.db.SetBlocklist(blocklist)
-	if err != nil {
-	}
+	_ = a.db.SetBlocklist(blocklist)
 }

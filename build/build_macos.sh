@@ -13,3 +13,4 @@ wails build -tags "prod"
 cd ../../
 
 go build -tags "prod" -o build/bin/BetterBlockedThanSorry.app/Contents/MacOS/bbts_daemon cmd/daemon/main.go
+go build -tags "prod" -o build/bin/BetterBlockedThanSorry.app/Contents/MacOS/bbts_updater cmd/updaterAgent/main.go
