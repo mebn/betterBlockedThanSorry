@@ -33,7 +33,7 @@ export default ({ buttonText }) => {
         <h1>
           Better Blocked
           <br />
-          Than Sorry (old)
+          Than Sorry
         </h1>
       </div>
 

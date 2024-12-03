@@ -24,32 +24,20 @@ func main() {
 	file.WriteString("[INFO] Agent started new.\n")
 
 	appUpdater, err := updater.NewUpdater()
-	if err != nil {
-		file.WriteString(fmt.Sprintf("[ERR] Failed to create Updater: %s\n", err))
-		stop(file)
-	}
+	handleError(file, err, "[ERR] Failed to create Updater")
 
 	if appUpdater.UpToDate(currentVersion) {
 		stop(file)
 	}
 
 	binaryPath, err := appUpdater.DownloadLatestBinary()
-	if err != nil {
-		file.WriteString(fmt.Sprintf("[ERR] Failed to download latest binary: %s\n", err))
-		stop(file)
-	}
+	handleError(file, err, "[ERR] Failed to download latest binary")
 
 	err = appUpdater.ReplaceProgram(binaryPath, env.BinaryPath)
-	if err != nil {
-		file.WriteString(fmt.Sprintf("[ERR] Failed to move the binary: %s\n", err))
-		stop(file)
-	}
+	handleError(file, err, "[ERR] Failed to move the binary")
 
 	err = appUpdater.RelaunchProgram(env.BinaryPath)
-	if err != nil {
-		file.WriteString(fmt.Sprintf("[ERR] Failed to reopen the binary: %s\n", err))
-		stop(file)
-	}
+	handleError(file, err, "[ERR] Failed to reopen the binary")
 
 	stop(file)
 }
@@ -59,5 +47,12 @@ func stop(file *os.File) {
 	err := agent.Stop()
 	if err != nil {
 		file.WriteString(fmt.Sprintf("[ERR] Stopping agent failed. err: %s\n", err))
+	}
+}
+
+func handleError(file *os.File, err error, msg string) {
+	if err != nil {
+		file.WriteString(fmt.Sprintf("%s: %s\n", msg, err))
+		stop(file)
 	}
 }

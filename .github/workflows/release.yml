@@ -34,11 +34,12 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       # Build and zip for MacOS amd64
-      - name: Build for MacOS
+      - name: Build and zip for MacOS amd64
         run: |
           ./build/build_macos.sh
           mkdir -p release
-          zip -r release/BetterBlockedThanSorry.app.amd64.zip build/bin/BetterBlockedThanSorry.app
+          cd build/bin
+          zip -r ../../release/BetterBlockedThanSorry.app.amd64.zip BetterBlockedThanSorry.app
         env:
           GOOS: darwin
           GOARCH: amd64 # amd=intel, arm=apple silicon
