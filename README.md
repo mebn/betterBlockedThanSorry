@@ -47,3 +47,7 @@ go test ./...
 # build for MacOS
 ./build/build_macos.sh
 ```
+
+## Development
+
+I'm using gofmt and prettier as formatters.
